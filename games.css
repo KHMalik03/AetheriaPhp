@@ -1,0 +1,163 @@
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+    font-family: Arial, Helvetica, sans-serif;
+}
+
+body{
+    background: url("Image/background.png") no-repeat center center/cover;
+    min-height:100vh;
+    display:flex;
+    flex-direction:column;
+    color:white;
+    position:relative;
+}
+
+/* Overlay flou */
+body::before{
+    content:"";
+    position:absolute;
+    inset:0;
+    backdrop-filter: blur(8px);
+    background: rgba(0,0,0,0.6);
+    z-index:-1;
+}
+
+/* HEADER */
+header{
+    background:#1e2a3a;
+    padding:15px 40px;
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+}
+
+.logo{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    font-size:22px;
+    font-weight:bold;
+}
+
+.logo img{
+    width:35px;
+}
+
+nav a{
+    color:white;
+    text-decoration:none;
+    margin-left:25px;
+}
+
+nav a:hover{
+    color:#f5c542;
+}
+
+/* CONTAINER */
+.container{
+    flex:1;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    padding:40px;
+}
+
+/* GAME CARD */
+.game-card{
+    width:85%;
+    background: rgba(30,42,58,0.85);
+    backdrop-filter: blur(10px);
+    border-radius:20px;
+    padding:40px;
+    display:flex;
+    gap:40px;
+    box-shadow:0 10px 30px rgba(0,0,0,0.4);
+}
+
+/* IMAGE */
+.game-image img{
+    width:180px;
+    border-radius:15px;
+}
+
+/* INFO */
+.game-info{
+    flex:1;
+}
+
+.game-info h2{
+    margin-bottom:15px;
+}
+
+.game-info p{
+    margin-bottom:10px;
+    color:#dcdcdc;
+}
+
+.game-info h3{
+    margin-top:20px;
+    margin-bottom:15px;
+}
+
+/* ACHIEVEMENTS */
+.achievements{
+    display:flex;
+    gap:20px;
+}
+
+.achievement{
+    background:#2d3c50;
+    padding:20px;
+    border-radius:15px;
+    text-align:center;
+    width:120px;
+    transition:0.3s;
+}
+
+.achievement:hover{
+    transform:translateY(-5px);
+}
+
+.achievement img{
+    width:50px;
+    margin-bottom:10px;
+}
+
+.achievement p{
+    font-size:13px;
+}
+
+/* PRICE BOX */
+.price-box{
+    display:flex;
+    flex-direction:column;
+    justify-content:center;
+    align-items:center;
+    gap:20px;
+}
+
+.price{
+    font-size:20px;
+}
+
+button{
+    background:#f5c542;
+    border:none;
+    padding:12px 25px;
+    border-radius:10px;
+    font-weight:bold;
+    cursor:pointer;
+}
+
+button:hover{
+    background:#e0b22f;
+}
+
+/* FOOTER */
+footer{
+    background:#1e2a3a;
+    text-align:center;
+    padding:15px;
+}
