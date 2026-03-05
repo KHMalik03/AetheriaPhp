@@ -22,6 +22,7 @@ class GameModel {
         $this->db = Database::connect();
     }
 
+    //Hydrate method to populate the model from a database row
     public function hydrate(array $row): self{
         $this->id = (int)$row['id'];
         $this->name = $row['name'];
@@ -82,5 +83,6 @@ class GameModel {
         $stmt = $this->db->prepare("DELETE FROM {$this->table} WHERE id = :id");
         return $stmt->execute([':id' => $id]);
     }
+    
 
 }
