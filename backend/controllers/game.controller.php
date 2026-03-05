@@ -1,7 +1,7 @@
 <?php
 
-require_once '../config/db.php';
-require_once '../models/game.model.php';
+require_once __DIR__ . '/../config/db.php';
+require_once __DIR__ . '/../models/game.model.php';
 
 class GameController {
     private GameModel $gameModel;

@@ -2,18 +2,18 @@
 
 class GameModel {
     //Table name
-    private string $table = 'game';
+    private string $table = 'games';
 
     //Attributes
-    private int $id;
-    private string $name;
-    private string $type;
-    private string $description;
-    private string $release_date;
-    private string $studio;
-    private string $image_url;
-    private string $created_at;
-    private string $updated_at;
+    public int $id;
+    public string $name;
+    public string $type;
+    public string $description;
+    public string $release_date;
+    public string $studio;
+    public string $image_url;
+    public string $created_at;
+    public string $updated_at;
 
      //connect to db
     private PDO $db;

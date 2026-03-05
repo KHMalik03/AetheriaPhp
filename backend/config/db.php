@@ -5,9 +5,9 @@ class Database {
 
     public static function connect(): PDO {
         if (self::$instance === null) {
-            $dsn = "pgsql:host={$_ENV['DB_HOST']};port={$_ENV['DB_PORT']};dbname={$_ENV['DB_NAME']}";
+            $dsn = "pgsql:host=localhost;port=5432;dbname=aetheria";
 
-            self::$instance = new PDO($dsn, $_ENV['DB_USER'], $_ENV['DB_PASS'], [
+            self::$instance = new PDO($dsn, 'postgres', 'Passw0rd', [
                 PDO::ATTR_ERRMODE            => PDO::ERRMODE_EXCEPTION,
                 PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
             ]);
