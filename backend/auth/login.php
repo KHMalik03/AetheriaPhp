@@ -7,44 +7,61 @@ Session::start();
 
 header('Content-Type: application/json');
 
-if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-    http_response_code(405);
-    echo json_encode(['message' => 'Method not allowed']);
-    exit;
-}
+$method = $_SERVER['REQUEST_METHOD'];
+$uri    = rtrim(parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH), '/');
 
-$data = json_decode(file_get_contents('php://input'), true);
+// POST /api/login
+if ($uri === '/AetheriaPhp/api/login' && $method === 'POST') {
+    $data = json_decode(file_get_contents('php://input'), true);
 
-if (empty($data['email']) || empty($data['password'])) {
-    http_response_code(400);
-    echo json_encode(['message' => 'Email and password are required']);
-    exit;
-}
-
-try {
-    $db = Database::connect();
-    $stmt = $db->prepare("SELECT id, username, password, role FROM users WHERE email = :email");
-    $stmt->execute([':email' => $data['email']]);
-    $user = $stmt->fetch();
-
-    if (!$user || !password_verify($data['password'], $user['password'])) {
-        http_response_code(401);
-        echo json_encode(['message' => 'Invalid credentials']);
+    if (empty($data['email']) || empty($data['password'])) {
+        http_response_code(400);
+        echo json_encode(['message' => 'Email and password are required']);
         exit;
     }
 
-    Session::set($user['id'], $user['username'], $user['role']);
+    try {
+        $db   = Database::connect();
+        $stmt = $db->prepare("SELECT id, username, password, role FROM users WHERE email = :email");
+        $stmt->execute([':email' => $data['email']]);
+        $user = $stmt->fetch();
 
-    echo json_encode([
-        'message'  => 'Login successful',
-        'user'     => [
-            'id'       => $user['id'],
-            'username' => $user['username'],
-            'role'     => $user['role'],
-        ]
-    ]);
+        if (!$user || !password_verify($data['password'], $user['password'])) {
+            http_response_code(401);
+            echo json_encode(['message' => 'Invalid credentials']);
+            exit;
+        }
 
-} catch (PDOException $e) {
-    http_response_code(500);
-    echo json_encode(['message' => 'Server error']);
+        Session::set($user['id'], $user['username'], $user['role']);
+
+        echo json_encode([
+            'message' => 'Login successful',
+            'user'    => [
+                'id'       => $user['id'],
+                'username' => $user['username'],
+                'role'     => $user['role'],
+            ]
+        ]);
+
+    } catch (PDOException $e) {
+        http_response_code(500);
+        echo json_encode(['message' => 'Server error']);
+    }
+    exit;
 }
+
+// POST /api/logout
+if ($uri === '/AetheriaPhp/api/logout' && $method === 'POST') {
+    if (!Session::isLoggedIn()) {
+        http_response_code(401);
+        echo json_encode(['message' => 'Not logged in']);
+        exit;
+    }
+
+    Session::destroy();
+    echo json_encode(['message' => 'Logged out successfully']);
+    exit;
+}
+
+http_response_code(405);
+echo json_encode(['message' => 'Method not allowed']);
