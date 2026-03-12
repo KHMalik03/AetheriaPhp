@@ -50,7 +50,18 @@ if ($uri === '/AetheriaPhp/api/login' && $method === 'POST') {
     exit;
 }
 
+// POST /api/logout
+if ($uri === '/AetheriaPhp/api/logout' && $method === 'POST') {
+    if (!Session::isLoggedIn()) {
+        http_response_code(401);
+        echo json_encode(['message' => 'Not logged in']);
+        exit;
+    }
 
+    Session::destroy();
+    echo json_encode(['message' => 'Logged out successfully']);
+    exit;
+}
 
 http_response_code(405);
 echo json_encode(['message' => 'Method not allowed']);
