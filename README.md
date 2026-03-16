@@ -1,63 +1,73 @@
-# AetheriaPhp
+# AetheriaPhp — Backend API
 
-REST API PHP pour la gestion d'une plateforme de jeux vidéo. Construite avec PHP 8.2, Apache (XAMPP) et PostgreSQL.
-
-**Base URL** : `http://localhost/AetheriaPhp/api`
+API REST pour la plateforme de jeux vidéo Aetheria. Elle gère les utilisateurs, les jeux, les trophées, les niveaux de difficulté et les bibliothèques personnelles des joueurs.
 
 ---
 
+## Stack technique
+
+- **PHP 8.2** — logique métier et routing
+- **Apache** via XAMPP — serveur web
+- **PostgreSQL** — base de données
+- **Sessions PHP** — authentification (cookies, durée 6h)
+
+---
 ## Authentification
 
-Les sessions sont gérées via des cookies PHP (durée : 6h).
+L'API utilise des **sessions PHP via cookies**. Pour accéder aux endpoints protégés, il faut d'abord se connecter via `/api/login`. Le cookie de session est automatiquement envoyé et doit être inclus dans toutes les requêtes suivantes.
 
-### POST `/api/login`
-Connecte un utilisateur.
+Deux niveaux d'accès :
+- **Connecté** (`isLoggedIn`) — accès aux actions personnelles (bibliothèque, trophées)
+- **Admin** (`isAdmin`) — accès à la gestion du contenu (jeux, trophées, niveaux)
 
-**Body :**
+---
+
+## Endpoints
+
+### Authentification
+
+| Méthode | URL | Auth | Description |
+|---------|-----|------|-------------|
+| POST | `/api/login` | — | Connexion |
+| POST | `/api/logout` | — | Déconnexion |
+
+#### POST `/api/login`
 ```json
 {
     "email": "user@example.com",
     "password": "motdepasse"
 }
 ```
-
-**Réponses :**
-- `200` — `{ "message": "Login successful" }`
-- `401` — `{ "message": "Invalid credentials" }`
+Retourne `200` en cas de succès, `401` si les identifiants sont incorrects.
 
 ---
 
-### POST `/api/logout`
-Déconnecte l'utilisateur courant.
+### Users
 
-**Réponses :**
-- `200` — `{ "message": "Logged out" }`
+| Méthode | URL | Auth | Description |
+|---------|-----|------|-------------|
+| GET | `/api/users` | — | Liste tous les utilisateurs |
+| GET | `/api/users/{id}` | — | Détail d'un utilisateur |
+| POST | `/api/users` | — | Créer un compte |
+| PUT | `/api/users/{id}` | — | Modifier un utilisateur |
+| DELETE | `/api/users/{id}` | — | Supprimer un utilisateur |
+| PATCH | `/api/users/{id}/role` | Admin | Changer le rôle |
 
----
+#### GET `/api/users` — exemple de réponse
+```json
+[
+    {
+        "id": 1,
+        "username": "john",
+        "email": "john@example.com",
+        "role": "user",
+        "created_at": "2024-01-01 10:00:00",
+        "description": "Joueur passionné"
+    }
+]
+```
 
-## Users
-
-### GET `/api/users`
-Retourne la liste de tous les utilisateurs.
-
-**Réponses :**
-- `200` — Tableau d'objets utilisateur
-
----
-
-### GET `/api/users/{id}`
-Retourne un utilisateur par son ID.
-
-**Réponses :**
-- `200` — Objet utilisateur
-- `404` — `{ "message": "User not found" }`
-
----
-
-### POST `/api/users`
-Crée un nouvel utilisateur.
-
-**Body :**
+#### POST `/api/users`
 ```json
 {
     "username": "john",
@@ -66,78 +76,52 @@ Crée un nouvel utilisateur.
 }
 ```
 
-**Réponses :**
-- `201` — `{ "message": "User created successfully" }`
-- `500` — `{ "message": "Failed to create user" }`
-
----
-
-### PUT `/api/users/{id}`
-Met à jour les informations d'un utilisateur.
-
-**Body :**
+#### PUT `/api/users/{id}`
 ```json
 {
     "username": "john_updated",
     "email": "john@example.com",
-    "description": "Ma description"
+    "description": "Ma nouvelle description"
 }
 ```
 
-**Réponses :**
-- `200` — `{ "message": "User updated successfully" }`
-- `404` — `{ "message": "User not found" }`
-
----
-
-### DELETE `/api/users/{id}`
-Supprime un utilisateur.
-
-**Réponses :**
-- `200` — `{ "message": "User deleted successfully" }`
-- `404` — `{ "message": "User not found" }`
-
----
-
-### PATCH `/api/users/{id}/role`
-Change le rôle d'un utilisateur. Réservé aux admins.
-
-**Body :**
+#### PATCH `/api/users/{id}/role`
 ```json
 {
     "role": "admin"
 }
 ```
 
-**Réponses :**
-- `200` — `{ "message": "Role updated successfully" }`
-- `403` — `{ "message": "Forbidden: admins only" }`
-
 ---
 
-## Games
+### Games
 
-### GET `/api/games`
-Retourne la liste de tous les jeux.
+| Méthode | URL | Auth | Description |
+|---------|-----|------|-------------|
+| GET | `/api/games` | — | Liste tous les jeux |
+| GET | `/api/games/{id}` | — | Détail d'un jeu |
+| POST | `/api/games` | Admin | Créer un jeu |
+| PUT | `/api/games/{id}` | Admin | Modifier un jeu |
+| DELETE | `/api/games/{id}` | Admin | Supprimer un jeu |
 
-**Réponses :**
-- `200` — Tableau d'objets jeu
+#### GET `/api/games` — exemple de réponse
+```json
+[
+    {
+        "id": 1,
+        "name": "The Witcher 3",
+        "type": "RPG",
+        "description": "Un RPG open world",
+        "image_url": "https://...",
+        "release_date": "2015-05-19",
+        "studio": "CD Projekt Red",
+        "created_at": "2024-01-01 10:00:00",
+        "updated_at": "2024-01-01 10:00:00"
+    }
+]
+```
 
----
-
-### GET `/api/games/{id}`
-Retourne un jeu par son ID.
-
-**Réponses :**
-- `200` — Objet jeu
-- `404` — `{ "message": "Game not found" }`
-
----
-
-### POST `/api/games`
-Crée un nouveau jeu. Réservé aux admins.
-
-**Body :**
+#### POST `/api/games`
 ```json
 {
     "name": "The Witcher 3",
@@ -149,46 +133,32 @@ Crée un nouveau jeu. Réservé aux admins.
 }
 ```
 
-**Réponses :**
-- `201` — `{ "message": "Game created successfully" }`
-- `403` — `{ "message": "Forbidden: admins only" }`
-
 ---
 
-### PUT `/api/games/{id}`
-Met à jour un jeu. Réservé aux admins.
+### Achievements (Trophées)
 
-**Réponses :**
-- `200` — `{ "message": "Game updated successfully" }`
-- `403` — `{ "message": "Forbidden: admins only" }`
-- `404` — `{ "message": "Game not found" }`
+Les trophées sont liés à un jeu et peuvent être débloqués par les utilisateurs.
 
----
+| Méthode | URL | Auth | Description |
+|---------|-----|------|-------------|
+| GET | `/api/achievements/game/{game_id}` | — | Trophées d'un jeu |
+| POST | `/api/achievements` | Admin | Créer un trophée |
+| PUT | `/api/achievements/{id}` | — | Modifier un trophée |
+| DELETE | `/api/achievements/{id}` | — | Supprimer un trophée |
 
-### DELETE `/api/games/{id}`
-Supprime un jeu. Réservé aux admins.
+#### GET `/api/achievements/game/{game_id}` — exemple de réponse
+```json
+[
+    {
+        "id": 1,
+        "game_id": 1,
+        "title": "Premier sang",
+        "description": "Vaincre un ennemi pour la première fois"
+    }
+]
+```
 
-**Réponses :**
-- `200` — `{ "message": "Game deleted successfully" }`
-- `403` — `{ "message": "Forbidden: admins only" }`
-- `404` — `{ "message": "Game not found" }`
-
----
-
-## Achievements
-
-### GET `/api/achievements/game/{game_id}`
-Retourne tous les trophées d'un jeu.
-
-**Réponses :**
-- `200` — Tableau d'objets achievement
-
----
-
-### POST `/api/achievements`
-Crée un trophée. Réservé aux admins.
-
-**Body :**
+#### POST `/api/achievements`
 ```json
 {
     "game_id": 1,
@@ -197,16 +167,7 @@ Crée un trophée. Réservé aux admins.
 }
 ```
 
-**Réponses :**
-- `201` — `{ "message": "Achievement created successfully" }`
-- `403` — `{ "message": "Forbidden: admins only" }`
-
----
-
-### PUT `/api/achievements/{id}`
-Met à jour un trophée.
-
-**Body :**
+#### PUT `/api/achievements/{id}`
 ```json
 {
     "title": "Nouveau titre",
@@ -214,37 +175,30 @@ Met à jour un trophée.
 }
 ```
 
-**Réponses :**
-- `200` — `{ "message": "Achievement updated successfully" }`
-- `404` — `{ "message": "Achievement not found" }`
-
 ---
 
-### DELETE `/api/achievements/{id}`
-Supprime un trophée.
+### Levels (Difficulté des jeux)
 
-**Réponses :**
-- `200` — `{ "message": "Achievement deleted successfully" }`
-- `404` — `{ "message": "Achievement not found" }`
+Un level associe un jeu à un niveau de difficulté (`easy`, `medium`, `hard`).
 
----
+| Méthode | URL | Auth | Description |
+|---------|-----|------|-------------|
+| GET | `/api/levels/{difficulty}/games` | — | Jeux d'une difficulté |
+| POST | `/api/levels` | Admin | Associer un jeu à une difficulté |
 
-## Levels
+#### GET `/api/levels/easy/games` — exemple de réponse
+```json
+[
+    {
+        "id": 1,
+        "name": "The Witcher 3",
+        "type": "RPG",
+        "studio": "CD Projekt Red"
+    }
+]
+```
 
-Les levels représentent la difficulté associée à un jeu.
-
-### GET `/api/levels/{difficulty}/games`
-Retourne tous les jeux d'une difficulté donnée (`easy`, `medium`, `hard`).
-
-**Réponses :**
-- `200` — Tableau d'objets jeu
-
----
-
-### POST `/api/levels`
-Associe un jeu à une difficulté. Réservé aux admins.
-
-**Body :**
+#### POST `/api/levels`
 ```json
 {
     "game_id": 1,
@@ -253,73 +207,79 @@ Associe un jeu à une difficulté. Réservé aux admins.
 }
 ```
 
-**Réponses :**
-- `201` — `{ "message": "Game added to level successfully" }`
-- `403` — `{ "message": "Forbidden: admins only" }`
-
 ---
 
-## User Games
+### Bibliothèque de jeux d'un utilisateur
 
-Gestion de la bibliothèque de jeux d'un utilisateur.
+Jeux ajoutés par un utilisateur à sa bibliothèque personnelle.
 
-### GET `/api/users/{id}/games`
-Retourne tous les jeux d'un utilisateur avec la date d'ajout et le temps de jeu.
+| Méthode | URL | Auth | Description |
+|---------|-----|------|-------------|
+| GET | `/api/users/{id}/games` | — | Bibliothèque d'un utilisateur |
+| POST | `/api/users/{id}/games` | Connecté | Ajouter un jeu |
+| DELETE | `/api/users/{id}/games/{game_id}` | Connecté | Retirer un jeu |
 
-**Réponses :**
-- `200` — Tableau d'objets jeu enrichis (`date_added`, `play_time`)
+#### GET `/api/users/{id}/games` — exemple de réponse
+```json
+[
+    {
+        "id": 1,
+        "name": "The Witcher 3",
+        "type": "RPG",
+        "date_added": "2024-01-15 14:30:00",
+        "play_time": 120
+    }
+]
+```
 
----
-
-### POST `/api/users/{id}/games`
-Ajoute un jeu à la bibliothèque d'un utilisateur. Nécessite d'être connecté.
-
-**Body :**
+#### POST `/api/users/{id}/games`
 ```json
 {
     "game_id": 1
 }
 ```
 
-**Réponses :**
-- `201` — `{ "message": "Game added to user successfully" }`
-- `401` — `{ "message": "Unauthorized" }`
-- `400` — `{ "message": "Invalid JSON body" }`
-
 ---
 
-### DELETE `/api/users/{id}/games/{game_id}`
-Retire un jeu de la bibliothèque d'un utilisateur. Nécessite d'être connecté.
+### Trophées débloqués par un utilisateur
 
-**Réponses :**
-- `200` — `{ "message": "Game removed from user successfully" }`
-- `401` — `{ "message": "Unauthorized" }`
+Un trophée ne peut être qu'ajouté, jamais supprimé.
 
----
+| Méthode | URL | Auth | Description |
+|---------|-----|------|-------------|
+| GET | `/api/users/{id}/achievements` | — | Trophées débloqués |
+| POST | `/api/users/{id}/achievements` | Connecté | Débloquer un trophée |
 
-## User Achievements
+#### GET `/api/users/{id}/achievements` — exemple de réponse
+```json
+[
+    {
+        "id": 1,
+        "game_id": 1,
+        "title": "Premier sang",
+        "description": "Vaincre un ennemi pour la première fois",
+        "unlocked_at": "2024-02-10 18:45:00"
+    }
+]
+```
 
-Gestion des trophées débloqués par un utilisateur.
-
-### GET `/api/users/{id}/achievements`
-Retourne tous les trophées débloqués par un utilisateur avec la date de débloquage.
-
-**Réponses :**
-- `200` — Tableau d'objets achievement enrichis (`unlocked_at`)
-
----
-
-### POST `/api/users/{id}/achievements`
-Débloque un trophée pour un utilisateur. Nécessite d'être connecté.
-
-**Body :**
+#### POST `/api/users/{id}/achievements`
 ```json
 {
     "achievement_id": 1
 }
 ```
 
-**Réponses :**
-- `201` — `{ "message": "Achievement unlocked successfully" }`
-- `400` — `{ "message": "achievement_id is required" }`
-- `401` — `{ "message": "Unauthorized" }`
+---
+
+## Codes de réponse
+
+| Code | Signification |
+|------|---------------|
+| `200` | Succès |
+| `201` | Ressource créée |
+| `400` | Body invalide ou champ manquant |
+| `401` | Non connecté |
+| `403` | Accès refusé (admin requis) |
+| `404` | Ressource introuvable |
+| `500` | Erreur serveur |
