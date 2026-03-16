@@ -13,6 +13,9 @@ if ($uri === '/AetheriaPhp/api/login' || $uri === '/AetheriaPhp/api/logout') {
 if (str_starts_with($uri, '/AetheriaPhp/api/achievements')) {
     require __DIR__ . '/routes/achievement.route.php';
 }
+if (str_starts_with($uri, '/AetheriaPhp/api/levels')) {
+    require __DIR__ . '/routes/level.route.php';
+}
 if (str_starts_with($uri, '/AetheriaPhp/api/games')) {
     require __DIR__ . '/routes/game.route.php';
 }
