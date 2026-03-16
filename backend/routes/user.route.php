@@ -2,9 +2,11 @@
 
 require_once __DIR__ . '/../controllers/user.controller.php';
 require_once __DIR__ . '/../controllers/userGame.controller.php';
+require_once __DIR__ . '/../controllers/userAchivement.controller.php';
 
-$controller     = new UserController();
-$gameController = new UserGameController();
+$controller            = new UserController();
+$gameController        = new UserGameController();
+$achievementController = new UserAchievementController();
 
 $method = $_SERVER['REQUEST_METHOD'];
 $uri = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
@@ -30,6 +32,22 @@ if (preg_match('/\/api\/users\/(\d+)\/games$/', $uri, $matches) && $method === '
 // DELETE /api/users/{id}/games/{game_id}
 if (preg_match('/\/api\/users\/(\d+)\/games\/(\d+)$/', $uri, $matches) && $method === 'DELETE') {
     $gameController->removeGame((int)$matches[1], (int)$matches[2]);
+}
+
+// GET /api/users/{id}/achievements
+if (preg_match('/\/api\/users\/(\d+)\/achievements$/', $uri, $matches) && $method === 'GET') {
+    $achievementController->getAchievements((int)$matches[1]);
+}
+// POST /api/users/{id}/achievements
+if (preg_match('/\/api\/users\/(\d+)\/achievements$/', $uri, $matches) && $method === 'POST') {
+    $data = json_decode(file_get_contents('php://input'), true);
+    if (!is_array($data)) {
+        http_response_code(400);
+        header('Content-Type: application/json');
+        echo json_encode(['message' => 'Invalid JSON body']);
+        exit;
+    }
+    $achievementController->unlock((int)$matches[1], $data);
 }
 
 // GET /api/users
