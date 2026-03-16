@@ -16,7 +16,7 @@
     </div>
     <nav>
         <a href="games.php">Accueil</a>
-        <a href="#">Connexion/Inscription</a>
+        <a href="auth.php">Connexion/Inscription</a>
     </nav>
 </header>
 

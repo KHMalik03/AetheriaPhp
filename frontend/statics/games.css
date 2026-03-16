@@ -6,7 +6,7 @@
 }
 
 body{
-    background: url("Image/background.png") no-repeat center center/cover;
+    background: url("Images/background.png") no-repeat center center/cover;
     min-height:100vh;
     display:flex;
     flex-direction:column;
@@ -14,7 +14,6 @@ body{
     position:relative;
 }
 
-/* Overlay flou */
 body::before{
     content:"";
     position:absolute;
@@ -24,7 +23,6 @@ body::before{
     z-index:-1;
 }
 
-/* HEADER */
 header{
     background:#1e2a3a;
     padding:15px 40px;
@@ -49,13 +47,17 @@ nav a{
     color:white;
     text-decoration:none;
     margin-left:25px;
+    font-size:15px;
+}
+
+nav a:visited {
+    color: white;
 }
 
 nav a:hover{
     color:#f5c542;
 }
 
-/* CONTAINER */
 .container{
     flex:1;
     display:flex;
@@ -64,7 +66,6 @@ nav a:hover{
     padding:40px;
 }
 
-/* GAME CARD */
 .game-card{
     width:85%;
     background: rgba(30,42,58,0.85);
@@ -76,13 +77,11 @@ nav a:hover{
     box-shadow:0 10px 30px rgba(0,0,0,0.4);
 }
 
-/* IMAGE */
 .game-image img{
     width:180px;
     border-radius:15px;
 }
 
-/* INFO */
 .game-info{
     flex:1;
 }
@@ -101,7 +100,6 @@ nav a:hover{
     margin-bottom:15px;
 }
 
-/* ACHIEVEMENTS */
 .achievements{
     display:flex;
     gap:20px;
@@ -129,7 +127,6 @@ nav a:hover{
     font-size:13px;
 }
 
-/* PRICE BOX */
 .price-box{
     display:flex;
     flex-direction:column;
@@ -155,9 +152,10 @@ button:hover{
     background:#e0b22f;
 }
 
-/* FOOTER */
 footer{
     background:#1e2a3a;
     text-align:center;
     padding:15px;
+    margin-top:auto;
+    font-size:14px;
 }

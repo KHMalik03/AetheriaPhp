@@ -49,6 +49,10 @@ nav a{
     font-size:15px;
 }
 
+nav a:visited {
+    color: white;
+}
+
 nav a:hover{
     color:#f5c542;
 }

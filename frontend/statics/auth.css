@@ -1,0 +1,149 @@
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+    font-family: Arial, Helvetica, sans-serif;
+}
+
+nav a{
+    color:white;
+    text-decoration:none;
+    margin-left:25px;
+    font-size:15px;
+}
+
+nav a:visited {
+    color: white;
+}
+
+nav a:hover {
+    color: #f5c542;
+}
+
+body{
+    background: url("Images/background.png") no-repeat center center/cover;
+    min-height:100vh;
+    display:flex;
+    flex-direction:column;
+    color:white;
+    position:relative;
+}
+
+body::before{
+    content:"";
+    position:absolute;
+    inset:0;
+    backdrop-filter: blur(8px);
+    background: rgba(0,0,0,0.6);
+    z-index:-1;
+}
+
+header{
+    background:#1e2a3a;
+    padding:15px 40px;
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+}
+
+.logo{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    font-size:22px;
+    font-weight:bold;
+}
+
+.logo img{
+    width:35px;
+}
+
+.container{
+    flex:1;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+}
+
+.form-box{
+    width:400px;
+    padding:40px;
+    border-radius:20px;
+    background: rgba(30,42,58,0.85);
+    backdrop-filter: blur(15px);
+    box-shadow:0 10px 30px rgba(0,0,0,0.4);
+    position:relative;
+}
+
+input[type="radio"]{
+    display:none;
+}
+
+.tabs{
+    display:flex;
+    justify-content:space-between;
+    margin-bottom:30px;
+}
+
+.tab{
+    flex:1;
+    text-align:center;
+    padding-bottom:10px;
+    cursor:pointer;
+    border-bottom:2px solid transparent;
+}
+
+#login:checked ~ .tabs label[for="login"],
+#register:checked ~ .tabs label[for="register"]{
+    border-color:#caa32c;
+}
+
+.form{
+    display:none;
+    flex-direction:column;
+}
+
+#login:checked ~ .login-form{
+    display:flex;
+}
+
+#register:checked ~ .register-form{
+    display:flex;
+}
+
+label{
+    margin-bottom:8px;
+    margin-top:10px;
+}
+
+input{
+    padding:12px;
+    border-radius:25px;
+    border:none;
+    background:#8c6f1f;
+    color:white;
+    margin-bottom:10px;
+    outline:none;
+}
+
+.main-btn{
+    margin-top:20px;
+    padding:12px;
+    border-radius:25px;
+    border:none;
+    background:#caa32c;
+    font-weight:bold;
+    cursor:pointer;
+}
+
+.main-btn:hover{
+    background:#b89224;
+}
+
+footer{
+    background:#1e2a3a;
+    text-align:center;
+    padding:15px;
+    margin-top:auto;
+    font-size:14px;
+}
