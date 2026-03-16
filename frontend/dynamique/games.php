@@ -11,12 +11,12 @@
 
 <header>
     <div class="logo">
-        <img src="Image/logo.png" alt="logo">
+        <img src="Images/logo.png" alt="logo">
         Aetheria
     </div>
     <nav>
         <a href="index.php">Accueil</a>
-        <a href="#">Connexion/Inscription</a>
+        <a href="auth.php">Connexion/Inscription</a>
     </nav>
 </header>
 
