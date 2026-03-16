@@ -11,14 +11,12 @@ class LevelController {
         $this->model = new LevelModel();
     }
 
-    // GET /api/levels/{difficulty}/games
     public function readGamesByDifficulty(string $difficulty): void {
         $games = $this->model->getGamesByDifficulty($difficulty);
         header('Content-Type: application/json');
         echo json_encode($games);
     }
 
-    // POST /api/levels  (admin)
     public function addGameToLevel(array $data): void {
         header('Content-Type: application/json');
         if (!Session::isAdmin()) {
