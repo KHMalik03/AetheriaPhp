@@ -1,79 +1,193 @@
+<?php
+session_start();
+require_once('backend/config/db.php');
+
+$db = Database::connect();
+
+function setFlash($msg)
+{
+    $_SESSION['flash'] = $msg;
+}
+
+function showFlash()
+{
+    if (!empty($_SESSION['flash'])) {
+        echo "<div>" . htmlspecialchars($_SESSION['flash']) . "</div>";
+        unset($_SESSION['flash']);
+    }
+}
+
+if (!isset($_GET['id'])) {
+    setFlash("Jeu introuvable");
+    header('Location: index.php');
+    exit();
+}
+
+$game_id = $_GET['id'];
+
+$stmt = $db->prepare("SELECT * FROM games WHERE id = :id");
+$stmt->execute(['id' => $game_id]);
+$game = $stmt->fetch();
+
+if (!$game) {
+    setFlash("Jeu introuvable");
+    header('Location: index.php');
+    exit();
+}
+
+$achievements = $db->prepare("
+    SELECT * FROM achievements WHERE game_id = :id
+");
+$achievements->execute(['id' => $game_id]);
+$gameAchievements = $achievements->fetchAll();
+
+$owned = false;
+
+if (isset($_SESSION['user_id'])) {
+    $check = $db->prepare("
+        SELECT * FROM user_games 
+        WHERE user_id = :user_id AND game_id = :game_id
+    ");
+    $check->execute([
+        'user_id' => $_SESSION['user_id'],
+        'game_id' => $game_id
+    ]);
+
+    $owned = $check->fetch() ? true : false;
+}
+
+if (isset($_POST['buy'])) {
+
+    if (!isset($_SESSION['user_id'])) {
+        setFlash("Vous devez être connecté pour acheter");
+        header("Location: auth.php");
+        exit();
+    }
+
+    if (!$owned) {
+        $stmt = $db->prepare("
+            INSERT INTO user_games (user_id, game_id) 
+            VALUES (:user_id, :game_id)
+        ");
+
+        $stmt->execute([
+            'user_id' => $_SESSION['user_id'],
+            'game_id' => $game_id
+        ]);
+
+        setFlash("Jeu acheté avec succès !");
+    } else {
+        setFlash("Vous possédez déjà ce jeu");
+    }
+
+    header("Location: games.php?id=" . $game_id);
+    exit();
+}
+?>
+
 <!DOCTYPE html>
 <html lang="fr">
+
 <head>
     <meta charset="UTF-8">
-    <title>Aetheria - Détail</title>
+    <title><?= htmlspecialchars($game['name']) ?></title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="games.css">
 </head>
 
 <body>
 
-<header>
-    <div class="logo">
-        <img src="Images/logo.png" alt="logo">
-        Aetheria
-    </div>
-    <nav>
-        <a href="index.php">Accueil</a>
-        <a href="auth.php">Connexion/Inscription</a>
-    </nav>
-</header>
-
-<section class="container">
-
-    <div class="game-card">
-
-        <div class="game-image">
-            <img src="Image/ff1.jpg" alt="Final Fantasy 1">
+    <header>
+        <div>
+            <strong>Aetheria</strong>
         </div>
 
-        <div class="game-info">
-            <h2>Final Fantasy 1</h2>
-            <p><strong>Date :</strong> 12/12/2020</p>
-            <p><strong>Editeurs :</strong> Square Enix</p>
-            <p>
-                <strong>Description :</strong> Professionalis diligens et motivatus sum,
-                magna facultate accommodandi et sensu ordinis praeditus.
-                Per experientias meas in campo, artes excolui atque animum
-                cooperandi et autonomiam confirmavi.
-            </p>
+        <nav>
+            <a href="index.php">Accueil</a>
 
-            <h3>Succès :</h3>
+            <?php if (isset($_SESSION['user_id'])): ?>
+                <a href="user.php">Profil</a>
+                <a href="logout.php">Déconnexion</a>
+            <?php else: ?>
+                <a href="auth.php">Connexion</a>
+            <?php endif; ?>
+        </nav>
+    </header>
 
-            <div class="achievements">
-                <div class="achievement">
-                    <img src="Image/icon1.png">
-                    <p>Veuillez<br>Acheter le jeu</p>
-                </div>
+    <?php showFlash(); ?>
 
-                <div class="achievement">
-                    <img src="Image/icon2.png">
-                    <p>Veuillez<br>Acheter le jeu</p>
-                </div>
+    <section>
 
-                <div class="achievement">
-                    <img src="Image/icon3.png">
-                    <p>Veuillez<br>Acheter le jeu</p>
-                </div>
+        <h1><?= htmlspecialchars($game['name']) ?></h1>
 
-                <div class="achievement">
-                    <img src="Image/icon4.png">
-                    <p>Veuillez<br>Acheter le jeu</p>
-                </div>
-            </div>
+        <div>
+            <img src="Images/<?= htmlspecialchars($game['image']) ?>"
+                alt="<?= htmlspecialchars($game['name']) ?>"
+                width="300">
         </div>
 
-        <div class="price-box">
-            <p class="price">Prix : $$$</p>
-            <button>Acheter</button>
-        </div>
-    </div>
-</section>
+        <p><strong>Date :</strong> <?= htmlspecialchars($game['release_date']) ?></p>
+        <p><strong>Editeur :</strong> <?= htmlspecialchars($game['editor']) ?></p>
 
-<footer>
-    2026 - Project Etudiants
-</footer>
+        <p>
+            <strong>Description :</strong><br>
+            <?= htmlspecialchars($game['description']) ?>
+        </p>
+
+    </section>
+
+    <section>
+
+        <h2>Succès</h2>
+
+        <?php if (empty($gameAchievements)): ?>
+            <p>Aucun succès pour ce jeu</p>
+        <?php else: ?>
+
+            <?php foreach ($gameAchievements as $achievement): ?>
+                <div>
+
+                    <img src="Images/<?= htmlspecialchars($achievement['image']) ?>"
+                        alt="<?= htmlspecialchars($achievement['name']) ?>"
+                        width="80">
+
+                    <p>
+                        <?php if ($owned): ?>
+                            <?= htmlspecialchars($achievement['name']) ?>
+                        <?php else: ?>
+                            🔒 Succès verrouillé (achetez le jeu)
+                        <?php endif; ?>
+                    </p>
+
+                </div>
+            <?php endforeach; ?>
+
+        <?php endif; ?>
+
+    </section>
+
+    <section>
+
+        <h2>Achat</h2>
+
+        <p><strong>Prix : <?= htmlspecialchars($game['price']) ?> €</strong></p>
+
+        <?php if ($owned): ?>
+            <button disabled>Déjà possédé</button>
+
+        <?php else: ?>
+
+            <form method="POST">
+                <button name="buy">Acheter</button>
+            </form>
+
+        <?php endif; ?>
+
+    </section>
+
+    <footer>
+        <p>2026 - Projet Étudiants</p>
+    </footer>
 
 </body>
+
 </html>

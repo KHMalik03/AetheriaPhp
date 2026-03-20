@@ -1,74 +1,103 @@
+<?php
+session_start();
+require_once 'backend/config/db.php';
+
+$pdo = Database::connect();
+
+function setFlash($msg)
+{
+    $_SESSION['flash'] = $msg;
+}
+
+function showFlash()
+{
+    if (!empty($_SESSION['flash'])) {
+        echo "<div>" . htmlspecialchars($_SESSION['flash']) . "</div>";
+        unset($_SESSION['flash']);
+    }
+}
+
+$isLogged = isset($_SESSION['user_id']);
+
+$stmt = $pdo->query("SELECT * FROM games");
+$games = $stmt->fetchAll();
+?>
+
 <!DOCTYPE html>
 <html lang="fr">
+
 <head>
     <meta charset="UTF-8">
     <title>Aetheria</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="index.css">
 </head>
 
 <body>
 
-<header>
-    <div class="logo">
-        <img src="Images\logo.png" alt="logo">
-        Aetheria
-    </div>
-    <nav>
-        <a href="games.php">Accueil</a>
-        <a href="auth.php">Connexion/Inscription</a>
-    </nav>
-</header>
-
-<h1 class="main-title">Jeu de la Saga :</h1>
-
-<section class="grid">
-
-    <div class="card">
-        <img src="Images/final_fantasy.jpg">
-        <div class="card-content">
-            <h3>Final Fantasy 1</h3>
-            <p>Premier jeu de la célèbre saga ....</p>
-            <div class="price">Prix : $</div>
+    <header>
+        <div>
+            <strong>Aetheria</strong>
         </div>
-        <button>Acheter</button>
-    </div>
 
-    <div class="card">
-        <img src="Images/final_fantasy.jpg">
-        <div class="card-content">
-            <h3>Final Fantasy 3</h3>
-            <p>Troisième jeu de la célèbre saga ....</p>
-            <div class="price">Prix : $$$</div>
-        </div>
-        <button>Acheter</button>
-    </div>
+        <nav>
+            <a href="index.php">Accueil</a>
 
-    <div class="card">
-        <img src="Images/final_fantasy_ii.jpg">
-        <div class="card-content">
-            <h3>Final Fantasy 2</h3>
-            <p>Deuxième jeu de la célèbre saga ....</p>
-            <div class="price">Prix : $$</div>
-        </div>
-        <button>Acheter</button>
-    </div>
+            <?php if ($isLogged): ?>
+                <a href="user.php">Profil</a>
+                <a href="logout.php">Déconnexion</a>
+            <?php else: ?>
+                <a href="auth.php">Connexion / Inscription</a>
+            <?php endif; ?>
+        </nav>
+    </header>
 
-    <div class="card">
-        <img src="Images/final_fantasy_ii.jpg">
-        <div class="card-content">
-            <h3>Final Fantasy 4</h3>
-            <p>Quatrième jeu de la célèbre saga ....</p>
-            <div class="price">Prix : $$$$</div>
-        </div>
-        <button>Acheter</button>
-    </div>
+    <?php showFlash(); ?>
 
-</section>
+    <h1>Jeux de la Saga</h1>
 
-<footer>
-    2026 - Project Etudiants
-</footer>
+    <?php if (empty($games)): ?>
+        <p>Aucun jeu disponible pour le moment.</p>
+    <?php else: ?>
+
+        <section>
+
+            <?php foreach ($games as $game): ?>
+                <div>
+
+                    <div>
+                        <img src="/frontend/Images/<?= htmlspecialchars($game['image']) ?>"
+                            alt="<?= htmlspecialchars($game['name']) ?>"
+                            width="200">
+                    </div>
+
+                    <div>
+                        <h3><?= htmlspecialchars($game['name']) ?></h3>
+
+                        <p><?= htmlspecialchars($game['description']) ?></p>
+
+                        <p><strong>Prix : <?= htmlspecialchars($game['price']) ?> €</strong></p>
+                    </div>
+
+                    <div>
+                        <a href="games.php?id=<?= $game['id'] ?>">
+                            <button>Voir le jeu</button>
+                        </a>
+                    </div>
+
+                </div>
+
+                <hr>
+
+            <?php endforeach; ?>
+
+        </section>
+
+    <?php endif; ?>
+
+    <footer>
+        <p>2026 - Projet Étudiants</p>
+    </footer>
 
 </body>
+
 </html>
