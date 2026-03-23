@@ -1,6 +1,6 @@
 <?php
 session_start();
-require_once('backend/config/db.php');
+require_once('../../backend/config/db.php');
 
 $db = Database::connect();
 
@@ -12,7 +12,7 @@ function setFlash($msg)
 function showFlash()
 {
     if (!empty($_SESSION['flash'])) {
-        echo "<div>" . htmlspecialchars($_SESSION['flash']) . "</div>";
+        echo "<div class='flash'>" . htmlspecialchars($_SESSION['flash']) . "</div>";
         unset($_SESSION['flash']);
     }
 }
@@ -24,189 +24,165 @@ if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'admin') {
 }
 
 if (isset($_POST['add_user'])) {
-    $stmt = $db->prepare("INSERT INTO users (username, email, role) VALUES (?, ?, ?)");
-    $stmt->execute([$_POST['username'], $_POST['email'], $_POST['role']]);
+    $password = password_hash($_POST['password'], PASSWORD_DEFAULT);
+
+    $db->prepare("INSERT INTO users (username,email,password,role) VALUES (?,?,?,?)")
+       ->execute([$_POST['username'], $_POST['email'], $password, $_POST['role']]);
 
     setFlash("Utilisateur ajouté");
     header("Location: admin.php");
     exit();
 }
 
-if (isset($_GET['delete_user'])) {
-    $stmt = $db->prepare("DELETE FROM users WHERE id = ?");
-    $stmt->execute([$_GET['delete_user']]);
-
-    setFlash("Utilisateur supprimé");
-    header("Location: admin.php");
-    exit();
-}
-
-if (isset($_POST['update_user'])) {
-    $stmt = $db->prepare("UPDATE users SET username=?, email=?, role=? WHERE id=?");
-    $stmt->execute([
-        $_POST['username'],
-        $_POST['email'],
-        $_POST['role'],
-        $_POST['id']
-    ]);
-
-    setFlash("Utilisateur mis à jour");
-    header("Location: admin.php");
-    exit();
-}
-
 if (isset($_POST['add_game'])) {
-    $stmt = $db->prepare("INSERT INTO games (name, success_count, player_count) VALUES (?, ?, ?)");
-    $stmt->execute([
-        $_POST['name'],
-        $_POST['success_count'],
-        $_POST['player_count']
-    ]);
+    $db->prepare("INSERT INTO games (name,type,description,image_url,release_date,studio) VALUES (?,?,?,?,?,?)")
+       ->execute([
+           $_POST['name'],
+           $_POST['type'],
+           $_POST['description'],
+           $_POST['image_url'],
+           $_POST['release_date'],
+           $_POST['studio']
+       ]);
 
     setFlash("Jeu ajouté");
     header("Location: admin.php");
     exit();
 }
 
+if (isset($_GET['delete_user'])) {
+    $db->prepare("DELETE FROM users WHERE id=?")->execute([$_GET['delete_user']]);
+    header("Location: admin.php"); exit();
+}
+
 if (isset($_GET['delete_game'])) {
-    $stmt = $db->prepare("DELETE FROM games WHERE id = ?");
-    $stmt->execute([$_GET['delete_game']]);
-
-    setFlash("Jeu supprimé");
-    header("Location: admin.php");
-    exit();
+    $db->prepare("DELETE FROM games WHERE id=?")->execute([$_GET['delete_game']]);
+    header("Location: admin.php"); exit();
 }
 
-if (isset($_POST['update_game'])) {
-    $stmt = $db->prepare("UPDATE games SET name=?, success_count=?, player_count=? WHERE id=?");
-    $stmt->execute([
-        $_POST['name'],
-        $_POST['success_count'],
-        $_POST['player_count'],
-        $_POST['id']
-    ]);
-
-    setFlash("Jeu mis à jour");
-    header("Location: admin.php");
-    exit();
-}
-
-$users = $db->query("SELECT id, username, email, role FROM users ORDER BY id ASC")->fetchAll();
-$games = $db->query("SELECT id, name, success_count, player_count FROM games ORDER BY id ASC")->fetchAll();
+$users = $db->query("SELECT * FROM users")->fetchAll();
+$games = $db->query("SELECT * FROM games")->fetchAll();
 ?>
 
 <!DOCTYPE html>
 <html lang="fr">
-
 <head>
-    <meta charset="UTF-8">
-    <title>Aetheria - Admin</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta charset="UTF-8">
+<title>Admin</title>
+<link rel="stylesheet" href="../../frontend/statics/admin.css">
 </head>
 
 <body>
 
-    <header>
-        <h2>Aetheria - Admin</h2>
+<header>
+    <div class="logo">
+        <img src="../../Images/logo.png">
+        <strong>Aetheria</strong>
+    </div>
+    <nav>
+        <a href="../../index.php">Accueil</a>
+        <a href="../../backend/auth/logout.php">Déconnexion</a>
+    </nav>
+</header>
 
-        <nav>
-            <a href="index.php">Accueil</a>
-            <a href="logout.php">Déconnexion</a>
-        </nav>
-    </header>
+<?php showFlash(); ?>
 
-    <?php showFlash(); ?>
+<div class="admin-container">
 
-    <h1>Panel d’administration</h1>
+<h1 class="title">Panel d’administration</h1>
 
-    <section>
+<div class="admin-card">
 
-        <h2>Gestion des utilisateurs</h2>
+<div class="table-area">
+<table>
+<tr><th>User</th><th>Email</th><th>Role</th></tr>
 
-        <?php if (empty($users)): ?>
-            <p>Aucun utilisateur</p>
-        <?php else: ?>
+<?php foreach($users as $u): ?>
+<tr>
+<td><?= $u['username'] ?></td>
+<td><?= $u['email'] ?></td>
+<td><?= $u['role'] ?></td>
+</tr>
+<?php endforeach; ?>
 
-            <?php foreach ($users as $user): ?>
-                <form method="POST">
+</table>
+</div>
 
-                    <input type="hidden" name="id" value="<?= $user['id'] ?>">
+<div class="action-area">
+<button class="add" onclick="openModal('userModal')">Rajouter User</button>
 
-                    <input type="text" name="username" value="<?= htmlspecialchars($user['username']) ?>">
-                    <input type="email" name="email" value="<?= htmlspecialchars($user['email']) ?>">
-                    <input type="text" name="role" value="<?= htmlspecialchars($user['role']) ?>">
+<?php foreach($users as $u): ?>
+<a class="delete" href="?delete_user=<?= $u['id'] ?>">Supp</a>
+<?php endforeach; ?>
+</div>
 
-                    <button type="submit" name="update_user">Enregistrer</button>
+</div>
 
-                    <a href="admin.php?delete_user=<?= $user['id'] ?>"
-                        onclick="return confirm('Supprimer cet utilisateur ?')">
-                        Supprimer
-                    </a>
+<div class="admin-card">
 
-                </form>
-                <hr>
-            <?php endforeach; ?>
+<div class="table-area">
+<table>
+<tr><th>Game</th><th>Type</th><th>Studio</th></tr>
 
-        <?php endif; ?>
+<?php foreach($games as $g): ?>
+<tr>
+<td><?= $g['name'] ?></td>
+<td><?= $g['type'] ?></td>
+<td><?= $g['studio'] ?></td>
+</tr>
+<?php endforeach; ?>
 
-        <h3>Ajouter un utilisateur</h3>
+</table>
+</div>
 
-        <form method="POST">
-            <input type="text" name="username" placeholder="Username" required>
-            <input type="email" name="email" placeholder="Email" required>
-            <input type="text" name="role" placeholder="Role" required>
+<div class="action-area">
+<button class="add" onclick="openModal('gameModal')">Rajouter Game</button>
 
-            <button type="submit" name="add_user">Ajouter</button>
-        </form>
+<?php foreach($games as $g): ?>
+<a class="delete" href="?delete_game=<?= $g['id'] ?>">Supp</a>
+<?php endforeach; ?>
+</div>
 
-    </section>
+</div>
 
-    <section>
+</div>
 
-        <h2>Gestion des jeux</h2>
+<div id="userModal" class="modal">
+<div class="modal-content">
+<span class="close" onclick="closeModal('userModal')">X</span>
+<form method="POST">
+<input name="username" placeholder="Username" required>
+<input name="email" placeholder="Email" required>
+<input name="password" placeholder="Password" required>
+<input name="role" placeholder="Role" required>
+<button class="add" name="add_user">Ajouter</button>
+</form>
+</div>
+</div>
 
-        <?php if (empty($games)): ?>
-            <p>Aucun jeu</p>
-        <?php else: ?>
+<div id="gameModal" class="modal">
+<div class="modal-content">
+<span class="close" onclick="closeModal('gameModal')">X</span>
+<form method="POST">
+<input name="name" placeholder="Nom" required>
+<input name="type" placeholder="Type" required>
+<input name="description" placeholder="Description" required>
+<input name="image_url" placeholder="Image" required>
+<input type="date" name="release_date" required>
+<input name="studio" placeholder="Studio" required>
+<button class="add" name="add_game">Ajouter</button>
+</form>
+</div>
+</div>
 
-            <?php foreach ($games as $game): ?>
-                <form method="POST">
+<script>
+function openModal(id){document.getElementById(id).style.display="flex";}
+function closeModal(id){document.getElementById(id).style.display="none";}
+</script>
 
-                    <input type="hidden" name="id" value="<?= $game['id'] ?>">
-
-                    <input type="text" name="name" value="<?= htmlspecialchars($game['name']) ?>">
-                    <input type="number" name="success_count" value="<?= htmlspecialchars($game['success_count']) ?>">
-                    <input type="number" name="player_count" value="<?= htmlspecialchars($game['player_count']) ?>">
-
-                    <button type="submit" name="update_game">Enregistrer</button>
-
-                    <a href="admin.php?delete_game=<?= $game['id'] ?>"
-                        onclick="return confirm('Supprimer ce jeu ?')">
-                        Supprimer
-                    </a>
-
-                </form>
-                <hr>
-            <?php endforeach; ?>
-
-        <?php endif; ?>
-
-        <h3>Ajouter un jeu</h3>
-
-        <form method="POST">
-            <input type="text" name="name" placeholder="Nom du jeu" required>
-            <input type="number" name="success_count" placeholder="Succès" required>
-            <input type="number" name="player_count" placeholder="Joueurs" required>
-
-            <button type="submit" name="add_game">Ajouter</button>
-        </form>
-
-    </section>
-
-    <footer>
-        <p>2026 - Projet Étudiants</p>
-    </footer>
+<footer>
+<p>2026 - Projet Étudiants</p>
+</footer>
 
 </body>
-
 </html>

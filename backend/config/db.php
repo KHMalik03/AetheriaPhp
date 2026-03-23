@@ -7,9 +7,9 @@ class Database {
         if (self::$instance === null) {
             $host = $_ENV['DB_HOST'] ?? 'localhost';
             $port = $_ENV['DB_PORT'] ?? '5432';
-            $name = $_ENV['DB_NAME'] ?? 'aetheria';
+            $name = $_ENV['DB_NAME'] ?? 'phpBDD';
             $user = $_ENV['DB_USER'] ?? 'postgres';
-            $pass = $_ENV['DB_PASS'] ?? 'Passw0rd';
+            $pass = $_ENV['DB_PASS'] ?? 'root';
 
             $dsn = "pgsql:host=$host;port=$port;dbname=$name";
 

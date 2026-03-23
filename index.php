@@ -19,8 +19,13 @@ function showFlash()
 
 $isLogged = isset($_SESSION['user_id']);
 
-$stmt = $pdo->query("SELECT * FROM games");
-$games = $stmt->fetchAll();
+$stmt = $pdo->query("
+    SELECT id, name, type, description, image_url, release_date, studio
+    FROM games
+    ORDER BY created_at DESC
+");
+
+$games = $stmt->fetchAll(PDO::FETCH_ASSOC);
 ?>
 
 <!DOCTYPE html>
@@ -30,74 +35,67 @@ $games = $stmt->fetchAll();
     <meta charset="UTF-8">
     <title>Aetheria</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="frontend/statics/index.css">
 </head>
 
 <body>
 
-    <header>
-        <div>
-            <strong>Aetheria</strong>
+<header>
+    <div class="logo">
+        <img src="Images/logo.png" alt="Logo">
+        <strong>Aetheria</strong>
+    </div>
+
+    <nav>
+        <a href="index.php">Accueil</a>
+
+        <?php if ($isLogged): ?>
+            <a href="frontend/dynamique/user.php">Profil</a>
+            <a href="backend/auth/logout.php">Déconnexion</a>
+        <?php else: ?>
+            <a href="frontend/dynamique/auth.php">Connexion / Inscription</a>
+        <?php endif; ?>
+    </nav>
+</header>
+
+<?php showFlash(); ?>
+
+<h1 class="main-title">Jeux de la Saga</h1>
+
+<?php if (empty($games)): ?>
+    <p style="text-align:center;">Aucun jeu disponible pour le moment.</p>
+<?php else: ?>
+
+<section class="grid">
+
+    <?php foreach ($games as $game): ?>
+        
+        <div class="card">
+
+            <img src="Images/<?= htmlspecialchars($game['image_url']) ?>"
+                 alt="<?= htmlspecialchars($game['name']) ?>">
+
+            <div class="card-content">
+                <h3><?= htmlspecialchars($game['name']) ?></h3>
+
+                <p><?= htmlspecialchars($game['description']) ?></p>
+
+                <a href="frontend/dynamique/games.php?id=<?= $game['id'] ?>">
+                    <button>Voir le jeu</button>
+                </a>
+            </div>
+
         </div>
 
-        <nav>
-            <a href="index.php">Accueil</a>
+    <?php endforeach; ?>
 
-            <?php if ($isLogged): ?>
-                <a href="user.php">Profil</a>
-                <a href="logout.php">Déconnexion</a>
-            <?php else: ?>
-                <a href="auth.php">Connexion / Inscription</a>
-            <?php endif; ?>
-        </nav>
-    </header>
+</section>
 
-    <?php showFlash(); ?>
+<?php endif; ?>
 
-    <h1>Jeux de la Saga</h1>
-
-    <?php if (empty($games)): ?>
-        <p>Aucun jeu disponible pour le moment.</p>
-    <?php else: ?>
-
-        <section>
-
-            <?php foreach ($games as $game): ?>
-                <div>
-
-                    <div>
-                        <img src="/frontend/Images/<?= htmlspecialchars($game['image']) ?>"
-                            alt="<?= htmlspecialchars($game['name']) ?>"
-                            width="200">
-                    </div>
-
-                    <div>
-                        <h3><?= htmlspecialchars($game['name']) ?></h3>
-
-                        <p><?= htmlspecialchars($game['description']) ?></p>
-
-                        <p><strong>Prix : <?= htmlspecialchars($game['price']) ?> €</strong></p>
-                    </div>
-
-                    <div>
-                        <a href="games.php?id=<?= $game['id'] ?>">
-                            <button>Voir le jeu</button>
-                        </a>
-                    </div>
-
-                </div>
-
-                <hr>
-
-            <?php endforeach; ?>
-
-        </section>
-
-    <?php endif; ?>
-
-    <footer>
-        <p>2026 - Projet Étudiants</p>
-    </footer>
+<footer>
+    <p>2026 - Projet Étudiants</p>
+</footer>
 
 </body>
-
 </html>

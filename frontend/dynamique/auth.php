@@ -1,6 +1,6 @@
 <?php
 session_start();
-require_once('backend/config/db.php');
+require_once('../../backend/config/db.php');
 
 $db = Database::connect();
 
@@ -19,62 +19,85 @@ function showFlash()
     }
 }
 
+
 if (isset($_POST['action']) && $_POST['action'] === 'login') {
 
-    $email = $_POST['email'];
+    $email = trim($_POST['email']);
     $password = $_POST['password'];
 
-    $stmt = $db->prepare("SELECT * FROM users WHERE email = :email");
-    $stmt->execute(['email' => $email]);
-
-    $user = $stmt->fetch();
-
-    if ($user && password_verify($password, $user['password'])) {
-
-        $_SESSION['user_id'] = $user['id'];
-        $_SESSION['role'] = $user['role'];
-
-        setFlash("Connexion réussie");
-
-        if ($user['role'] === 'admin') {
-            header('Location: admin.php');
-        } else {
-            header('Location: index.php');
-        }
-        exit();
-    } else {
-        $message = "Email ou mot de passe incorrect";
-    }
-}
-
-if (isset($_POST['action']) && $_POST['action'] === 'register') {
-
-    $username = $_POST['username'];
-    $email = $_POST['email'];
-    $password = password_hash($_POST['password'], PASSWORD_DEFAULT);
-
-    $check = $db->prepare("SELECT id FROM users WHERE email = :email");
-    $check->execute(['email' => $email]);
-
-    if ($check->fetch()) {
-        $message = "Cet email est déjà utilisé";
+    if (empty($email) || empty($password)) {
+        $message = "Tous les champs sont requis";
     } else {
 
         $stmt = $db->prepare("
-            INSERT INTO users (username, email, password, role) 
-            VALUES (:username, :email, :password, 'user')
+            SELECT id, username, email, password, role 
+            FROM users 
+            WHERE email = :email
         ");
+        $stmt->execute(['email' => $email]);
 
-        $stmt->execute([
-            'username' => $username,
-            'email' => $email,
-            'password' => $password
-        ]);
+        $user = $stmt->fetch(PDO::FETCH_ASSOC);
 
-        setFlash("Compte créé avec succès, vous pouvez vous connecter");
+        if ($user && password_verify($password, $user['password'])) {
 
-        header("Location: auth.php");
-        exit();
+            session_regenerate_id(true);
+
+            $_SESSION['user_id'] = $user['id'];
+            $_SESSION['role'] = $user['role'];
+
+            setFlash("Connexion réussie");
+
+            if ($user['role'] === 'admin') {
+                header('Location: admin.php');
+            } else {
+                header('Location: ../../index.php');
+            }
+            exit();
+
+        } else {
+            $message = "Email ou mot de passe incorrect";
+        }
+    }
+}
+
+
+if (isset($_POST['action']) && $_POST['action'] === 'register') {
+
+    $username = trim($_POST['username']);
+    $email = trim($_POST['email']);
+    $passwordRaw = $_POST['password'];
+
+    if (empty($username) || empty($email) || empty($passwordRaw)) {
+        $message = "Tous les champs sont requis";
+    } elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+        $message = "Email invalide";
+    } else {
+
+        $password = password_hash($passwordRaw, PASSWORD_DEFAULT);
+
+        $check = $db->prepare("SELECT id FROM users WHERE email = :email");
+        $check->execute(['email' => $email]);
+
+        if ($check->fetch()) {
+            $message = "Cet email est déjà utilisé";
+        } else {
+
+            $stmt = $db->prepare("
+                INSERT INTO users (username, email, password, role) 
+                VALUES (:username, :email, :password, 'user')
+            ");
+
+            $stmt->execute([
+                'username' => $username,
+                'email' => $email,
+                'password' => $password
+            ]);
+
+            setFlash("Compte créé avec succès, vous pouvez vous connecter");
+
+            header("Location: auth.php");
+            exit();
+        }
     }
 }
 ?>
@@ -86,93 +109,67 @@ if (isset($_POST['action']) && $_POST['action'] === 'register') {
     <meta charset="UTF-8">
     <title>Aetheria - Connexion</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="../../frontend/statics/auth.css">
 </head>
 
 <body>
 
-    <header>
-        <h2>Aetheria</h2>
+<header>
+        <div class="logo">
+            <img src="../../Images/logo.png" alt="Logo">
+            <strong>Aetheria</strong>
+        </div>
+    <nav>
+        <a href="../../index.php">Accueil</a>
+    </nav>
+</header>
 
-        <nav>
-            <a href="index.php">Accueil</a>
-        </nav>
-    </header>
+<div class="container">
 
-    <?php showFlash(); ?>
+    <div class="form-box">
 
-    <?php if (!empty($message)): ?>
-        <div><?= htmlspecialchars($message) ?></div>
-    <?php endif; ?>
+        <input type="radio" name="tab" id="login" checked>
+        <input type="radio" name="tab" id="register">
 
-    <section>
+        <div class="tabs">
+            <label for="login" class="tab">Connexion</label>
+            <label for="register" class="tab">Inscription</label>
+        </div>
 
-        <h2>Connexion</h2>
-
-        <form method="POST">
-
+        <form method="POST" class="form login-form">
             <input type="hidden" name="action" value="login">
 
-            <div>
-                <label>Email :</label><br>
-                <input type="email" name="email" required>
-            </div>
+            <label>Email :</label>
+            <input type="email" name="email" required>
 
-            <br>
+            <label>Mot de passe :</label>
+            <input type="password" name="password" required>
 
-            <div>
-                <label>Mot de passe :</label><br>
-                <input type="password" name="password" required>
-            </div>
-
-            <br>
-
-            <button type="submit">Se connecter</button>
-
+            <button class="main-btn" type="submit">Se connecter</button>
         </form>
 
-    </section>
-
-    <hr>
-
-    <section>
-
-        <h2>Inscription</h2>
-
-        <form method="POST">
-
+        <form method="POST" class="form register-form">
             <input type="hidden" name="action" value="register">
 
-            <div>
-                <label>Pseudo :</label><br>
-                <input type="text" name="username" required>
-            </div>
+            <label>Pseudo :</label>
+            <input type="text" name="username" required>
 
-            <br>
+            <label>Email :</label>
+            <input type="email" name="email" required>
 
-            <div>
-                <label>Email :</label><br>
-                <input type="email" name="email" required>
-            </div>
+            <label>Mot de passe :</label>
+            <input type="password" name="password" required>
 
-            <br>
-
-            <div>
-                <label>Mot de passe :</label><br>
-                <input type="password" name="password" required>
-            </div>
-
-            <br>
-
-            <button type="submit">S'inscrire</button>
-
+            <button class="main-btn" type="submit">S'inscrire</button>
         </form>
 
-    </section>
+    </div>
 
-    <footer>
-        <p>2026 - Projet Étudiants</p>
-    </footer>
+</div>
+
+<footer>
+    <p>2026 - Projet Étudiants</p>
+</footer>
 
 </body>
-
 </html>
