@@ -1,75 +1,88 @@
 <?php
-session_start();
-require_once('../../backend/config/db.php');
-
-$db = Database::connect();
-
-function setFlash($msg)
-{
-    $_SESSION['flash'] = $msg;
+function apiCall(string $method, string $endpoint, array $data = []): array {
+    $ch = curl_init('http://localhost/AetheriaPhp/api' . $endpoint);
+    $opts = [
+        CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_COOKIE         => 'PHPSESSID=' . ($_COOKIE['PHPSESSID'] ?? ''),
+        CURLOPT_CUSTOMREQUEST  => $method,
+    ];
+    if (!empty($data)) {
+        $opts[CURLOPT_POSTFIELDS] = json_encode($data);
+        $opts[CURLOPT_HTTPHEADER] = ['Content-Type: application/json'];
+    }
+    curl_setopt_array($ch, $opts);
+    $response = curl_exec($ch);
+    $httpCode  = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    curl_close($ch);
+    return ['code' => $httpCode, 'body' => json_decode($response, true) ?? []];
 }
 
-function showFlash()
-{
+function setFlash(string $msg): void { $_SESSION['flash'] = $msg; }
+function showFlash(): void {
     if (!empty($_SESSION['flash'])) {
         echo "<div class='flash'>" . htmlspecialchars($_SESSION['flash']) . "</div>";
         unset($_SESSION['flash']);
     }
 }
 
-if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'admin') {
-    setFlash("Accès refusé");
-    header('Location: auth.php');
+$meRes = apiCall('GET','/me');
+if ($meRes['code'] !== 200 || ($meRes['body']['role'] ?? '') !== 'admin') {
+    header('Location: /AetheriaPhp/frontend/dynamique/auth.php');
     exit();
 }
 
 if (isset($_POST['add_user'])) {
-    $password = password_hash($_POST['password'], PASSWORD_DEFAULT);
-
-    $db->prepare("INSERT INTO users (username,email,password,role) VALUES (?,?,?,?)")
-       ->execute([$_POST['username'], $_POST['email'], $password, $_POST['role']]);
-
-    setFlash("Utilisateur ajouté");
-    header("Location: admin.php");
-    exit();
-}
-
-if (isset($_POST['add_game'])) {
-    $db->prepare("INSERT INTO games (name,type,description,image_url,release_date,studio) VALUES (?,?,?,?,?,?)")
-       ->execute([
-           $_POST['name'],
-           $_POST['type'],
-           $_POST['description'],
-           $_POST['image_url'],
-           $_POST['release_date'],
-           $_POST['studio']
-       ]);
-
-    setFlash("Jeu ajouté");
+    $result = apiCall('POST','/users', [
+        'username' => $_POST['username'],
+        'email'    => $_POST['email'],
+        'password' => $_POST['password'],
+    ]);
+    setFlash($result['code'] === 201 ? "Utilisateur ajouté" : ($result['body']['message'] ?? "Erreur"));
     header("Location: admin.php");
     exit();
 }
 
 if (isset($_GET['delete_user'])) {
-    $db->prepare("DELETE FROM users WHERE id=?")->execute([$_GET['delete_user']]);
-    header("Location: admin.php"); exit();
+    apiCall('DELETE','/users/' . (int)$_GET['delete_user']);
+    setFlash("Utilisateur supprimé");
+    header("Location: admin.php");
+    exit();
+}
+
+if (isset($_POST['add_game'])) {
+    $result = apiCall('POST','/games', [
+        'name'         => $_POST['name'],
+        'type'         => $_POST['type'],
+        'description'  => $_POST['description'],
+        'image_url'    => $_POST['image_url'],
+        'release_date' => $_POST['release_date'],
+        'studio'       => $_POST['studio'],
+    ]);
+    setFlash($result['code'] === 201 ? "Jeu ajouté" : ($result['body']['message'] ?? "Erreur"));
+    header("Location: admin.php");
+    exit();
 }
 
 if (isset($_GET['delete_game'])) {
-    $db->prepare("DELETE FROM games WHERE id=?")->execute([$_GET['delete_game']]);
-    header("Location: admin.php"); exit();
+    apiCall('DELETE','/games/' . (int)$_GET['delete_game']);
+    setFlash("Jeu supprimé");
+    header("Location: admin.php");
+    exit();
 }
 
-$users = $db->query("SELECT * FROM users")->fetchAll();
-$games = $db->query("SELECT * FROM games")->fetchAll();
+$usersRes = apiCall('GET','/users');
+$users    = $usersRes['body'] ?? [];
+
+$gamesRes = apiCall('GET','/games');
+$games    = $gamesRes['body'] ?? [];
 ?>
 
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-<meta charset="UTF-8">
-<title>Admin</title>
-<link rel="stylesheet" href="../../frontend/statics/admin.css">
+    <meta charset="UTF-8">
+    <title>Admin</title>
+    <link rel="stylesheet" href="/AetheriaPhp/frontend/statics/admin.css">
 </head>
 
 <body>
@@ -89,60 +102,48 @@ $games = $db->query("SELECT * FROM games")->fetchAll();
 
 <div class="admin-container">
 
-<h1 class="title">Panel d’administration</h1>
+<h1 class="title">Panel d'administration</h1>
 
 <div class="admin-card">
-
 <div class="table-area">
 <table>
 <tr><th>User</th><th>Email</th><th>Role</th></tr>
-
 <?php foreach($users as $u): ?>
 <tr>
-<td><?= $u['username'] ?></td>
-<td><?= $u['email'] ?></td>
-<td><?= $u['role'] ?></td>
+<td><?= htmlspecialchars($u['username']) ?></td>
+<td><?= htmlspecialchars($u['email']) ?></td>
+<td><?= htmlspecialchars($u['role']) ?></td>
 </tr>
 <?php endforeach; ?>
-
 </table>
 </div>
-
 <div class="action-area">
 <button class="add" onclick="openModal('userModal')">Rajouter User</button>
-
 <?php foreach($users as $u): ?>
 <a class="delete" href="?delete_user=<?= $u['id'] ?>">Supp</a>
 <?php endforeach; ?>
 </div>
-
 </div>
 
 <div class="admin-card">
-
 <div class="table-area">
 <table>
 <tr><th>Game</th><th>Type</th><th>Studio</th></tr>
-
 <?php foreach($games as $g): ?>
 <tr>
-<td><?= $g['name'] ?></td>
-<td><?= $g['type'] ?></td>
-<td><?= $g['studio'] ?></td>
+<td><?= htmlspecialchars($g['name']) ?></td>
+<td><?= htmlspecialchars($g['type'] ?? '') ?></td>
+<td><?= htmlspecialchars($g['studio'] ?? '') ?></td>
 </tr>
 <?php endforeach; ?>
-
 </table>
 </div>
-
 <div class="action-area">
 <button class="add" onclick="openModal('gameModal')">Rajouter Game</button>
-
 <?php foreach($games as $g): ?>
 <a class="delete" href="?delete_game=<?= $g['id'] ?>">Supp</a>
 <?php endforeach; ?>
 </div>
-
 </div>
 
 </div>
@@ -153,8 +154,7 @@ $games = $db->query("SELECT * FROM games")->fetchAll();
 <form method="POST">
 <input name="username" placeholder="Username" required>
 <input name="email" placeholder="Email" required>
-<input name="password" placeholder="Password" required>
-<input name="role" placeholder="Role" required>
+<input type="password" name="password" placeholder="Password" required>
 <button class="add" name="add_user">Ajouter</button>
 </form>
 </div>
@@ -167,7 +167,7 @@ $games = $db->query("SELECT * FROM games")->fetchAll();
 <input name="name" placeholder="Nom" required>
 <input name="type" placeholder="Type" required>
 <input name="description" placeholder="Description" required>
-<input name="image_url" placeholder="Image" required>
+<input name="image_url" placeholder="Image URL" required>
 <input type="date" name="release_date" required>
 <input name="studio" placeholder="Studio" required>
 <button class="add" name="add_game">Ajouter</button>

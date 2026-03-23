@@ -7,7 +7,7 @@ class GameController {
     private GameModel $gameModel;
 
     public function __construct() {
-        $this->gameModel = new GameModel(Database::connect());
+        $this->gameModel = new GameModel();
     }
 
     public function read():void {

@@ -1,103 +1,64 @@
 <?php
-session_start();
-require_once('../../backend/config/db.php');
 
-$db = Database::connect();
+define('API_URL', 'http://localhost/AetheriaPhp/api');
 
 $message = "";
 
-function setFlash($msg)
-{
-    $_SESSION['flash'] = $msg;
-}
+function apiPost(string $endpoint, array $data): array {
+    $ch = curl_init(API_URL . $endpoint);
+    curl_setopt_array($ch, [
+        CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_POST           => true,
+        CURLOPT_POSTFIELDS     => json_encode($data),
+        CURLOPT_HTTPHEADER     => ['Content-Type: application/json'],
+        CURLOPT_HEADER         => true,
+    ]);
+    $response   = curl_exec($ch);
+    $headerSize = curl_getinfo($ch, CURLINFO_HEADER_SIZE);
+    $httpCode   = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    $headers    = substr($response, 0, $headerSize);
+    $body       = substr($response, $headerSize);
+    curl_close($ch);
 
-function showFlash()
-{
-    if (!empty($_SESSION['flash'])) {
-        echo "<div>" . htmlspecialchars($_SESSION['flash']) . "</div>";
-        unset($_SESSION['flash']);
+    $sessId = null;
+    foreach (explode("\r\n", $headers) as $header) {
+        if (stripos($header, 'Set-Cookie: PHPSESSID=') === 0) {
+            preg_match('/PHPSESSID=([^;]+)/', $header, $matches);
+            $sessId = $matches[1] ?? null;
+        }
     }
-}
 
+    return ['code' => $httpCode, 'body' => json_decode($body, true), 'sessId' => $sessId];
+}
 
 if (isset($_POST['action']) && $_POST['action'] === 'login') {
+    $result = apiPost('/login', [
+        'email'    => $_POST['email'],
+        'password' => $_POST['password'],
+    ]);
 
-    $email = trim($_POST['email']);
-    $password = $_POST['password'];
-
-    if (empty($email) || empty($password)) {
-        $message = "Tous les champs sont requis";
-    } else {
-
-        $stmt = $db->prepare("
-            SELECT id, username, email, password, role 
-            FROM users 
-            WHERE email = :email
-        ");
-        $stmt->execute(['email' => $email]);
-
-        $user = $stmt->fetch(PDO::FETCH_ASSOC);
-
-        if ($user && password_verify($password, $user['password'])) {
-
-            session_regenerate_id(true);
-
-            $_SESSION['user_id'] = $user['id'];
-            $_SESSION['role'] = $user['role'];
-
-            setFlash("Connexion réussie");
-
-            if ($user['role'] === 'admin') {
-                header('Location: admin.php');
-            } else {
-                header('Location: ../../index.php');
-            }
-            exit();
-
-        } else {
-            $message = "Email ou mot de passe incorrect";
+    if ($result['code'] === 200) {
+        if (!empty($result['sessId'])) {
+            setcookie('PHPSESSID', $result['sessId'], ['path' => '/', 'httponly' => true]);
         }
+        header('Location: /AetheriaPhp/index.php');
+        exit();
+    } else {
+        $message = $result['body']['message'] ?? "Email ou mot de passe incorrect";
     }
 }
 
-
 if (isset($_POST['action']) && $_POST['action'] === 'register') {
+    $result = apiPost('/users', [
+        'username' => $_POST['username'],
+        'email'    => $_POST['email'],
+        'password' => $_POST['password'],
+    ]);
 
-    $username = trim($_POST['username']);
-    $email = trim($_POST['email']);
-    $passwordRaw = $_POST['password'];
-
-    if (empty($username) || empty($email) || empty($passwordRaw)) {
-        $message = "Tous les champs sont requis";
-    } elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
-        $message = "Email invalide";
+    if ($result['code'] === 201) {
+        $message = "Compte créé avec succès, vous pouvez vous connecter";
     } else {
-
-        $password = password_hash($passwordRaw, PASSWORD_DEFAULT);
-
-        $check = $db->prepare("SELECT id FROM users WHERE email = :email");
-        $check->execute(['email' => $email]);
-
-        if ($check->fetch()) {
-            $message = "Cet email est déjà utilisé";
-        } else {
-
-            $stmt = $db->prepare("
-                INSERT INTO users (username, email, password, role) 
-                VALUES (:username, :email, :password, 'user')
-            ");
-
-            $stmt->execute([
-                'username' => $username,
-                'email' => $email,
-                'password' => $password
-            ]);
-
-            setFlash("Compte créé avec succès, vous pouvez vous connecter");
-
-            header("Location: auth.php");
-            exit();
-        }
+        $message = $result['body']['message'] ?? "Erreur lors de la création du compte";
     }
 }
 ?>
@@ -109,20 +70,24 @@ if (isset($_POST['action']) && $_POST['action'] === 'register') {
     <meta charset="UTF-8">
     <title>Aetheria - Connexion</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="../../frontend/statics/auth.css">
+    <link rel="stylesheet" href="/AetheriaPhp/frontend/statics/auth.css">
 </head>
 
 <body>
 
 <header>
-        <div class="logo">
-            <img src="../../Images/logo.png" alt="Logo">
-            <strong>Aetheria</strong>
-        </div>
+    <div class="logo">
+        <img src="../../Images/logo.png" alt="Logo">
+        <strong>Aetheria</strong>
+    </div>
     <nav>
         <a href="../../index.php">Accueil</a>
     </nav>
 </header>
+
+<?php if (!empty($message)): ?>
+    <div class="error"><?= htmlspecialchars($message) ?></div>
+<?php endif; ?>
 
 <div class="container">
 

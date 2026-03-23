@@ -8,5 +8,5 @@ Session::start();
 Session::destroy();
 
 // Redirige vers la page d'accueil
-header("Location: /index.php");
+header("Location: /AetheriaPhp/index.php");
 exit;

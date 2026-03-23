@@ -1,59 +1,48 @@
 <?php
-session_start();
-require_once('../../backend/config/db.php');
-
-$db = Database::connect();
-
-function setFlash($msg)
-{
-    $_SESSION['flash'] = $msg;
+function apiCall(string $method, string $endpoint, array $data = []): array {
+    $ch = curl_init('http://localhost/AetheriaPhp/api' . $endpoint);
+    $opts = [
+        CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_COOKIE         => 'PHPSESSID=' . ($_COOKIE['PHPSESSID'] ?? ''),
+        CURLOPT_CUSTOMREQUEST  => $method,
+    ];
+    if (!empty($data)) {
+        $opts[CURLOPT_POSTFIELDS] = json_encode($data);
+        $opts[CURLOPT_HTTPHEADER] = ['Content-Type: application/json'];
+    }
+    curl_setopt_array($ch, $opts);
+    $response = curl_exec($ch);
+    $httpCode  = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    curl_close($ch);
+    return ['code' => $httpCode, 'body' => json_decode($response, true) ?? []];
 }
 
-function showFlash()
-{
+function setFlash(string $msg): void { $_SESSION['flash'] = $msg; }
+function showFlash(): void {
     if (!empty($_SESSION['flash'])) {
         echo "<div style='text-align:center; padding:10px;'>" . htmlspecialchars($_SESSION['flash']) . "</div>";
         unset($_SESSION['flash']);
     }
 }
 
-if (!isset($_SESSION['user_id'])) {
-    setFlash("Veuillez vous connecter");
-    header('Location: auth.php');
+$meRes = apiCall('GET','/me');
+if ($meRes['code'] !== 200) {
+    header('Location: /AetheriaPhp/frontend/dynamique/auth.php');
     exit();
 }
 
-$user_id = $_SESSION['user_id'];
+$user_id = (int)$meRes['body']['id'];
 
-$stmt = $db->prepare("SELECT username, email, role FROM users WHERE id = :id");
-$stmt->execute(['id' => $user_id]);
-$user = $stmt->fetch();
+$userRes  = apiCall('GET','/users/' . $user_id);
+$user     = $userRes['body'] ?? [];
 
-if (!$user) {
-    session_destroy();
-    header('Location: auth.php');
-    exit();
-}
+$gamesRes        = apiCall('GET','/users/' . $user_id . '/games');
+$userGames       = $gamesRes['body'] ?? [];
 
-$games = $db->prepare("
-    SELECT g.id, g.name, g.image_url 
-    FROM games g
-    JOIN user_games ug ON ug.game_id = g.id
-    WHERE ug.user_id = :id
-");
-$games->execute(['id' => $user_id]);
-$userGames = $games->fetchAll();
+$achievementsRes  = apiCall('GET','/users/' . $user_id . '/achievements');
+$userAchievements = $achievementsRes['body'] ?? [];
 
-$achievements = $db->prepare("
-    SELECT a.title, a.description 
-    FROM achievements a
-    JOIN user_achievements ua ON ua.achievement_id = a.id
-    WHERE ua.user_id = :id
-");
-$achievements->execute(['id' => $user_id]);
-$userAchievements = $achievements->fetchAll();
-
-$gameCount = count($userGames);
+$gameCount    = count($userGames);
 $successCount = count($userAchievements);
 ?>
 
@@ -64,7 +53,7 @@ $successCount = count($userAchievements);
     <meta charset="UTF-8">
     <title>Aetheria - Profil</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="../../frontend/statics/user.css">
+    <link rel="stylesheet" href="/AetheriaPhp/frontend/statics/user.css">
 </head>
 
 <body>
@@ -79,7 +68,7 @@ $successCount = count($userAchievements);
         <a href="../../index.php">Accueil</a>
 
         <?php if (isset($user['role']) && $user['role'] === 'admin'): ?>
-            <a href="../../frontend/dynamique/admin.php">Admin</a>
+            <a href="admin.php">Admin</a>
         <?php endif; ?>
 
         <a href="../../backend/auth/logout.php">Déconnexion</a>
@@ -95,12 +84,12 @@ $successCount = count($userAchievements);
         <img src="../../Images/avatar.jpg" class="avatar" alt="Avatar">
 
         <div class="profile-info">
-            <h2><?= htmlspecialchars($user['username']) ?></h2>
+            <h2><?= htmlspecialchars($user['username'] ?? '') ?></h2>
 
             <div class="info-grid">
                 <div>
                     <p><strong>Email :</strong></p>
-                    <p><?= htmlspecialchars($user['email']) ?></p>
+                    <p><?= htmlspecialchars($user['email'] ?? '') ?></p>
                 </div>
 
                 <div>
@@ -122,7 +111,7 @@ $successCount = count($userAchievements);
         <div class="games-box">
 
             <?php if (!empty($userGames)): ?>
-                <img src="../../Images/<?= htmlspecialchars($userGames[0]['image_url']) ?>" alt="">
+                <img src="<?= htmlspecialchars($userGames[0]['image_url'] ?? '') ?>" alt="">
             <?php endif; ?>
 
             <a class="link" href="../../index.php">Voir mes jeux</a>

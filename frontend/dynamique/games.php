@@ -1,16 +1,24 @@
 <?php
-session_start();
-require_once('../../backend/config/db.php');
-
-$db = Database::connect();
-
-function setFlash($msg)
-{
-    $_SESSION['flash'] = $msg;
+function apiCall(string $method, string $endpoint, array $data = []): array {
+    $ch = curl_init('http://localhost/AetheriaPhp/api' . $endpoint);
+    $opts = [
+        CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_COOKIE         => 'PHPSESSID=' . ($_COOKIE['PHPSESSID'] ?? ''),
+        CURLOPT_CUSTOMREQUEST  => $method,
+    ];
+    if (!empty($data)) {
+        $opts[CURLOPT_POSTFIELDS] = json_encode($data);
+        $opts[CURLOPT_HTTPHEADER] = ['Content-Type: application/json'];
+    }
+    curl_setopt_array($ch, $opts);
+    $response = curl_exec($ch);
+    $httpCode  = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    curl_close($ch);
+    return ['code' => $httpCode, 'body' => json_decode($response, true) ?? []];
 }
 
-function showFlash()
-{
+function setFlash(string $msg): void { $_SESSION['flash'] = $msg; }
+function showFlash(): void {
     if (!empty($_SESSION['flash'])) {
         echo "<div style='text-align:center; padding:10px;'>" . htmlspecialchars($_SESSION['flash']) . "</div>";
         unset($_SESSION['flash']);
@@ -23,65 +31,43 @@ if (!isset($_GET['id']) || !is_numeric($_GET['id'])) {
     exit();
 }
 
-$game_id = (int) $_GET['id'];
+$game_id = (int)$_GET['id'];
 
-$stmt = $db->prepare("
-    SELECT id, name, description, image_url, type, release_date, studio
-    FROM games 
-    WHERE id = :id
-");
-$stmt->execute(['id' => $game_id]);
-$game = $stmt->fetch(PDO::FETCH_ASSOC);
-
-if (!$game) {
+$gameRes = apiCall('GET', '/games/' . $game_id);
+if ($gameRes['code'] === 404 || empty($gameRes['body'])) {
     setFlash("Jeu introuvable");
     header('Location: ../../index.php');
     exit();
 }
+$game = $gameRes['body'];
 
-$achievements = $db->prepare("
-    SELECT id, title, description 
-    FROM achievements 
-    WHERE game_id = :id
-");
-$achievements->execute(['id' => $game_id]);
-$gameAchievements = $achievements->fetchAll(PDO::FETCH_ASSOC);
+$achievementsRes  = apiCall('GET', '/achievements/game/' . $game_id);
+$gameAchievements = $achievementsRes['body'] ?? [];
 
-$owned = false;
+$owned  = false;
+$meRes  = apiCall('GET', '/me');
+$meUser = $meRes['code'] === 200 ? $meRes['body'] : null;
 
-if (isset($_SESSION['user_id'])) {
-    $check = $db->prepare("
-        SELECT 1 FROM user_games 
-        WHERE user_id = :user_id AND game_id = :game_id
-    ");
-    $check->execute([
-        'user_id' => $_SESSION['user_id'],
-        'game_id' => $game_id
-    ]);
-
-    $owned = (bool) $check->fetch();
+if ($meUser) {
+    $userGamesRes = apiCall('GET', '/users/' . $meUser['id'] . '/games');
+    $userGames    = $userGamesRes['body'] ?? [];
+    foreach ($userGames as $ug) {
+        if ((int)$ug['id'] === $game_id) {
+            $owned = true;
+            break;
+        }
+    }
 }
 
 if (isset($_POST['buy'])) {
-
-    if (!isset($_SESSION['user_id'])) {
-        setFlash("Vous devez être connecté pour acheter");
-        header("Location: auth.php");
+    if (!$meUser) {
+        header("Location: /AetheriaPhp/frontend/dynamique/auth.php");
         exit();
     }
 
     if (!$owned) {
-        $stmt = $db->prepare("
-            INSERT INTO user_games (user_id, game_id) 
-            VALUES (:user_id, :game_id)
-        ");
-
-        $stmt->execute([
-            'user_id' => $_SESSION['user_id'],
-            'game_id' => $game_id
-        ]);
-
-        setFlash("Jeu acheté avec succès !");
+        $result = apiCall('POST', '/users/' . $meUser['id'] . '/games', ['game_id' => $game_id]);
+        setFlash($result['code'] === 201 ? "Jeu ajouté à votre bibliothèque !" : "Erreur lors de l'ajout");
     } else {
         setFlash("Vous possédez déjà ce jeu");
     }
@@ -98,7 +84,7 @@ if (isset($_POST['buy'])) {
     <meta charset="UTF-8">
     <title><?= htmlspecialchars($game['name']) ?></title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="../../frontend/statics/games.css">
+    <link rel="stylesheet" href="/AetheriaPhp/frontend/statics/games.css">
 </head>
 
 <body>
@@ -112,11 +98,11 @@ if (isset($_POST['buy'])) {
     <nav>
         <a href="../../index.php">Accueil</a>
 
-        <?php if (isset($_SESSION['user_id'])): ?>
-            <a href="../../frontend/dynamique/user.php">Profil</a>
+        <?php if ($meUser): ?>
+            <a href="user.php">Profil</a>
             <a href="../../backend/auth/logout.php">Déconnexion</a>
         <?php else: ?>
-            <a href="../../frontend/dynamique/auth.php">Connexion</a>
+            <a href="auth.php">Connexion</a>
         <?php endif; ?>
     </nav>
 </header>
@@ -128,18 +114,18 @@ if (isset($_POST['buy'])) {
     <div class="game-card">
 
         <div class="game-image">
-            <img src="../../Images/<?= htmlspecialchars($game['image_url']) ?>"
+            <img src="<?= htmlspecialchars($game['image_url'] ?? '') ?>"
                  alt="<?= htmlspecialchars($game['name']) ?>">
         </div>
 
         <div class="game-info">
             <h2><?= htmlspecialchars($game['name']) ?></h2>
 
-            <p><strong>Type :</strong> <?= htmlspecialchars($game['type']) ?></p>
-            <p><strong>Studio :</strong> <?= htmlspecialchars($game['studio']) ?></p>
-            <p><strong>Date :</strong> <?= htmlspecialchars($game['release_date']) ?></p>
+            <p><strong>Type :</strong> <?= htmlspecialchars($game['type'] ?? '-') ?></p>
+            <p><strong>Studio :</strong> <?= htmlspecialchars($game['studio'] ?? '-') ?></p>
+            <p><strong>Date :</strong> <?= htmlspecialchars($game['release_date'] ?? '-') ?></p>
 
-            <p><?= htmlspecialchars($game['description']) ?></p>
+            <p><?= htmlspecialchars($game['description'] ?? '') ?></p>
 
             <h3>Succès</h3>
 
@@ -148,12 +134,9 @@ if (isset($_POST['buy'])) {
                 <?php if (empty($gameAchievements)): ?>
                     <p>Aucun succès</p>
                 <?php else: ?>
-
                     <?php foreach ($gameAchievements as $achievement): ?>
                         <div class="achievement">
-
                             <img src="../../Images/trophy.png" alt="Succès">
-
                             <p>
                                 <?php if ($owned): ?>
                                     <?= htmlspecialchars($achievement['title']) ?>
@@ -161,25 +144,21 @@ if (isset($_POST['buy'])) {
                                     🔒 Verrouillé
                                 <?php endif; ?>
                             </p>
-
                         </div>
                     <?php endforeach; ?>
-
                 <?php endif; ?>
 
             </div>
         </div>
 
         <div class="price-box">
-
             <?php if ($owned): ?>
                 <button disabled>Déjà possédé</button>
             <?php else: ?>
                 <form method="POST">
-                    <button name="buy">Acheter</button>
+                    <button name="buy">Ajouter à ma bibliothèque</button>
                 </form>
             <?php endif; ?>
-
         </div>
 
     </div>
