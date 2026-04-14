@@ -1,0 +1,38 @@
+services:
+  frontend:
+    build: .
+    ports:
+      - "80:80"
+    env_file:
+      - .env
+    environment:
+      - API_URL=http://backend/api
+    depends_on:
+      - backend
+    volumes:
+      - ./:/var/www/html
+
+  backend:
+    build: .
+    ports:
+      - "8080:80"
+    env_file:
+      - .env
+    depends_on:
+      - db
+    volumes:
+      - ./:/var/www/html
+
+  db:
+    build:
+      context: .
+      dockerfile: Dockerfile.db
+    environment:
+      - POSTGRES_USER=admin
+      - POSTGRES_PASSWORD=Passw0rd
+      - POSTGRES_DB=aetheria
+    volumes:
+      - db-data:/var/lib/postgresql
+
+volumes:
+  db-data:

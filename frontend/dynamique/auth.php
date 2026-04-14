@@ -1,6 +1,6 @@
 <?php
 
-define('API_URL', 'http://localhost/AetheriaPhp/api');
+require_once __DIR__ . '/config.php';
 
 $message = "";
 

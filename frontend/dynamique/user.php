@@ -1,6 +1,8 @@
 <?php
+require_once __DIR__ . '/config.php';
+
 function apiCall(string $method, string $endpoint, array $data = []): array {
-    $ch = curl_init('http://localhost/AetheriaPhp/api' . $endpoint);
+    $ch = curl_init(API_URL . $endpoint);
     $opts = [
         CURLOPT_RETURNTRANSFER => true,
         CURLOPT_COOKIE         => 'PHPSESSID=' . ($_COOKIE['PHPSESSID'] ?? ''),
