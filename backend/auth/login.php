@@ -9,9 +9,10 @@ header('Content-Type: application/json');
 
 $method = $_SERVER['REQUEST_METHOD'];
 $uri    = rtrim(parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH), '/');
+$uri    = str_replace('/AetheriaPhp', '', $uri);
 
 // POST /api/login
-if ($uri === '/AetheriaPhp/api/login' && $method === 'POST') {
+if ($uri === '/api/login' && $method === 'POST') {
     $data = json_decode(file_get_contents('php://input'), true);
 
     if (empty($data['email']) || empty($data['password'])) {
@@ -51,7 +52,7 @@ if ($uri === '/AetheriaPhp/api/login' && $method === 'POST') {
 }
 
 // POST /api/logout
-if ($uri === '/AetheriaPhp/api/logout' && $method === 'POST') {
+if ($uri === '/api/logout' && $method === 'POST') {
     if (!Session::isLoggedIn()) {
         http_response_code(401);
         echo json_encode(['message' => 'Not logged in']);

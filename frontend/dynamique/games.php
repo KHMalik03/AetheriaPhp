@@ -63,7 +63,7 @@ if ($meUser) {
 
 if (isset($_POST['buy'])) {
     if (!$meUser) {
-        header("Location: /AetheriaPhp/frontend/dynamique/auth.php");
+        header("Location: /frontend/dynamique/auth.php");
         exit();
     }
 
@@ -86,7 +86,7 @@ if (isset($_POST['buy'])) {
     <meta charset="UTF-8">
     <title><?= htmlspecialchars($game['name']) ?></title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="/AetheriaPhp/frontend/statics/games.css">
+    <link rel="stylesheet" href="/frontend/statics/games.css">
 </head>
 
 <body>

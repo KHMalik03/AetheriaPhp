@@ -17,7 +17,16 @@ function showFlash()
     }
 }
 
-$isLogged = isset($_SESSION['user_id']);
+$apiUrl = getenv('API_URL') ?: 'http://localhost/api';
+$ch = curl_init($apiUrl . '/me');
+curl_setopt_array($ch, [
+    CURLOPT_RETURNTRANSFER => true,
+    CURLOPT_COOKIE         => 'PHPSESSID=' . ($_COOKIE['PHPSESSID'] ?? ''),
+]);
+$meResponse = curl_exec($ch);
+$meCode     = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+curl_close($ch);
+$isLogged = $meCode === 200;
 
 $stmt = $pdo->query("
     SELECT id, name, type, description, image_url, release_date, studio

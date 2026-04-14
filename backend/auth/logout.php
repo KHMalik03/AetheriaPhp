@@ -1,12 +1,17 @@
 <?php
 
-require_once __DIR__ . '/session.php';
+$apiUrl = getenv('API_URL') ?: 'http://localhost/api';
 
-Session::start();
+$ch = curl_init($apiUrl . '/logout');
+curl_setopt_array($ch, [
+    CURLOPT_RETURNTRANSFER => true,
+    CURLOPT_CUSTOMREQUEST  => 'POST',
+    CURLOPT_COOKIE         => 'PHPSESSID=' . ($_COOKIE['PHPSESSID'] ?? ''),
+]);
+curl_exec($ch);
+curl_close($ch);
 
-// Détruit la session
-Session::destroy();
+setcookie('PHPSESSID', '', time() - 3600, '/');
 
-// Redirige vers la page d'accueil
-header("Location: /AetheriaPhp/index.php");
+header("Location: /index.php");
 exit;

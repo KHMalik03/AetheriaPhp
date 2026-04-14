@@ -29,7 +29,7 @@ function showFlash(): void {
 
 $meRes = apiCall('GET','/me');
 if ($meRes['code'] !== 200 || ($meRes['body']['role'] ?? '') !== 'admin') {
-    header('Location: /AetheriaPhp/frontend/dynamique/auth.php');
+    header('Location: /frontend/dynamique/auth.php');
     exit();
 }
 
@@ -84,7 +84,7 @@ $games    = $gamesRes['body'] ?? [];
 <head>
     <meta charset="UTF-8">
     <title>Admin</title>
-    <link rel="stylesheet" href="/AetheriaPhp/frontend/statics/admin.css">
+    <link rel="stylesheet" href="/frontend/statics/admin.css">
 </head>
 
 <body>

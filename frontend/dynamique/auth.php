@@ -41,7 +41,7 @@ if (isset($_POST['action']) && $_POST['action'] === 'login') {
         if (!empty($result['sessId'])) {
             setcookie('PHPSESSID', $result['sessId'], ['path' => '/', 'httponly' => true]);
         }
-        header('Location: /AetheriaPhp/index.php');
+        header('Location: /index.php');
         exit();
     } else {
         $message = $result['body']['message'] ?? "Email ou mot de passe incorrect";
@@ -70,7 +70,7 @@ if (isset($_POST['action']) && $_POST['action'] === 'register') {
     <meta charset="UTF-8">
     <title>Aetheria - Connexion</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="/AetheriaPhp/frontend/statics/auth.css">
+    <link rel="stylesheet" href="/frontend/statics/auth.css">
 </head>
 
 <body>

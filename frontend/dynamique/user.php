@@ -29,7 +29,7 @@ function showFlash(): void {
 
 $meRes = apiCall('GET','/me');
 if ($meRes['code'] !== 200) {
-    header('Location: /AetheriaPhp/frontend/dynamique/auth.php');
+    header('Location: /frontend/dynamique/auth.php');
     exit();
 }
 
@@ -55,7 +55,7 @@ $successCount = count($userAchievements);
     <meta charset="UTF-8">
     <title>Aetheria - Profil</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="/AetheriaPhp/frontend/statics/user.css">
+    <link rel="stylesheet" href="/frontend/statics/user.css">
 </head>
 
 <body>
