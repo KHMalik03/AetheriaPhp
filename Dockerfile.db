@@ -56,6 +56,9 @@ CREATE TABLE IF NOT EXISTS user_achievements (
 
 -- Données de test
 
+INSERT INTO users (username, email, password, role) VALUES
+    ('admin', 'admin@aetheria.com', '$2y$10$bccNnOlzy0tGczCUlJ3DxO/.MYDU.dxu7N4cPK4F9EQFgIF1il/aC', 'admin');
+
 INSERT INTO games (name, type, description, release_date, studio, image_url) VALUES
     ('Final Fantasy I',   'RPG', 'Le jeu qui a lancé la saga légendaire.',        '1987-12-18', 'Square', 'final_fantasy1.jpg'),
     ('Final Fantasy II',  'RPG', 'Une aventure épique avec un système unique.',   '1988-12-17', 'Square', 'final_fantasy2.jpg'),

@@ -7,9 +7,102 @@ API REST pour la plateforme de jeux vidéo Aetheria. Elle gère les utilisateurs
 ## Stack technique
 
 - **PHP 8.2** — logique métier et routing
-- **Apache** via XAMPP — serveur web
+- **Apache** via XAMPP — serveur web local / Docker — serveur web conteneurisé
 - **PostgreSQL** — base de données
 - **Sessions PHP** — authentification (cookies, durée 6h)
+- **Docker** — conteneurisation avec séparation frontend / backend
+
+---
+
+## Docker
+
+### Architecture
+
+```
+Navigateur
+    ↓ port 80
+ Container frontend  (PHP 8.2 + Apache) — pages web
+    ↓ http://backend/api  (réseau Docker interne)
+ Container backend   (PHP 8.2 + Apache) — API REST
+    ↓
+ Container db        (PostgreSQL latest) — base de données
+```
+
+### Fichiers Docker
+
+| Fichier | Rôle |
+|---------|------|
+| `Dockerfile` | Image PHP 8.2 + Apache + extensions PDO PostgreSQL |
+| `Dockerfile.db` | Image PostgreSQL avec schéma SQL intégré |
+| `docker-compose.yml` | Orchestration des 3 containers |
+| `.env` | Variables d'environnement (credentials DB, URL API) |
+| `.htaccess` | Réécriture des routes `/api/*` vers `backend/api.php` |
+| `apache.conf` | Active `AllowOverride All` pour Apache |
+
+### Lancer le projet
+
+```bash
+# Premier lancement
+docker compose up --build
+
+# Relancer sans rebuild
+docker compose up
+
+# Arrêter (données conservées)
+docker compose down
+
+# Arrêter et supprimer les données
+docker compose down -v
+```
+
+### Variables d'environnement (`.env`)
+
+```env
+DB_HOST=db
+DB_PORT=5432
+DB_NAME=aetheria
+DB_USER=admin
+DB_PASS=Passw0rd
+```
+
+### Accès
+
+| Service | URL |
+|---------|-----|
+| Frontend | http://localhost |
+| Backend API | http://localhost:8080 |
+
+---
+
+## Frontend
+
+### Pages
+
+| Fichier | URL | Description |
+|---------|-----|-------------|
+| `index.php` | `/` | Accueil — liste des jeux |
+| `frontend/dynamique/auth.php` | `/frontend/dynamique/auth.php` | Connexion / Inscription |
+| `frontend/dynamique/games.php` | `/frontend/dynamique/games.php?id={id}` | Détail d'un jeu |
+| `frontend/dynamique/user.php` | `/frontend/dynamique/user.php` | Profil utilisateur |
+| `frontend/dynamique/admin.php` | `/frontend/dynamique/admin.php` | Panel admin |
+
+### Configuration API (`frontend/dynamique/config.php`)
+
+L'URL de l'API est centralisée dans ce fichier et peut être surchargée via la variable d'environnement `API_URL` :
+
+```php
+define('API_URL', getenv('API_URL') ?: 'http://localhost/api');
+```
+
+En local (XAMPP) : `http://localhost/AetheriaPhp/api`
+En Docker : `http://backend/api` (défini automatiquement via `docker-compose.yml`)
+
+### Modifications apportées pour Docker
+
+- Suppression du préfixe `/AetheriaPhp/` dans tous les chemins CSS et redirections
+- Centralisation de l'URL de l'API dans `frontend/dynamique/config.php`
+- `index.php` utilise l'API `/me` pour vérifier l'authentification (au lieu de `$_SESSION`)
+- `backend/auth/logout.php` appelle l'API `/api/logout` pour détruire la session côté backend
 
 ---
 ## Authentification
