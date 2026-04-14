@@ -58,11 +58,11 @@ docker compose down -v
 ### Variables d'environnement (`.env`)
 
 ```env
-DB_HOST=db
-DB_PORT=5432
-DB_NAME=aetheria
-DB_USER=admin
-DB_PASS=Passw0rd
+DB_HOST=**
+DB_PORT=****
+DB_NAME=******
+DB_USER=*****
+DB_PASS=*******
 ```
 
 ### Accès
