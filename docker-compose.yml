@@ -30,9 +30,9 @@ services:
       context: .
       dockerfile: Dockerfile.db
     environment:
-      - POSTGRES_USER=admin
-      - POSTGRES_PASSWORD=Passw0rd
-      - POSTGRES_DB=aetheria
+      - POSTGRES_USER=${DB_USER}
+      - POSTGRES_PASSWORD=${DB_PASS}
+      - POSTGRES_DB=${DB_NAME}
     volumes:
       - db-data:/var/lib/postgresql
 
