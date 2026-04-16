@@ -1,6 +1,3 @@
-FROM postgres:latest
-
-RUN cat > /docker-entrypoint-initdb.d/init.sql << 'EOF'
 -- Tables
 
 CREATE TABLE IF NOT EXISTS games (
@@ -65,4 +62,3 @@ INSERT INTO games (name, type, description, release_date, studio, image_url) VAL
     ('Final Fantasy III', 'RPG', 'Découvrez le système des Jobs pour la première fois.', '1990-04-27', 'Square', 'final_fantasy3.jpg'),
     ('Final Fantasy IV',  'RPG', 'Une histoire de rédemption et de courage.',     '1991-07-19', 'Square', 'final_fantasy4.jpg'),
     ('Final Fantasy V',   'RPG', 'Maîtrisez des centaines de capacités de Jobs.', '1992-12-06', 'Square', 'final_fantasy5.jpg');
-EOF
